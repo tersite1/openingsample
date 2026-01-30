@@ -37,8 +37,20 @@ export const FurnitureMarketView: React.FC<FurnitureMarketViewProps> = () => {
   const [selectedListing, setSelectedListing] = useState<FurnitureListing | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showShippingForm, setShowShippingForm] = useState(false);
+  const [paymentListing, setPaymentListing] = useState<FurnitureListing | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [likedItems, setLikedItems] = useState<Set<string>>(new Set());
+
+  // 배송 정보
+  const [shippingInfo, setShippingInfo] = useState({
+    name: '',
+    phone: '',
+    address: '',
+    addressDetail: '',
+    zipCode: '',
+    memo: ''
+  });
 
   // 매물 목록 로드
   useEffect(() => {
@@ -84,7 +96,30 @@ export const FurnitureMarketView: React.FC<FurnitureMarketViewProps> = () => {
     });
   };
 
-  const handlePayment = async (listing: FurnitureListing) => {
+  // 구매하기 버튼 클릭 -> 배송정보 입력 폼 표시
+  const handleBuyClick = (listing: FurnitureListing) => {
+    setPaymentListing(listing);
+    setShowShippingForm(true);
+  };
+
+  // 배송정보 입력 후 결제 진행
+  const handlePayment = async () => {
+    if (!paymentListing) return;
+
+    // 배송정보 유효성 검사
+    if (!shippingInfo.name.trim()) {
+      alert('받는 분 이름을 입력해주세요.');
+      return;
+    }
+    if (!shippingInfo.phone.trim()) {
+      alert('연락처를 입력해주세요.');
+      return;
+    }
+    if (!shippingInfo.address.trim()) {
+      alert('배송 주소를 입력해주세요.');
+      return;
+    }
+
     // 토스 페이먼츠 SDK 로드
     if (!window.TossPayments) {
       const script = document.createElement('script');
@@ -99,10 +134,10 @@ export const FurnitureMarketView: React.FC<FurnitureMarketViewProps> = () => {
 
     try {
       await tossPayments.requestPayment('카드', {
-        amount: listing.price,
-        orderId: `ORDER_${listing.id}_${Date.now()}`,
-        orderName: listing.title,
-        customerName: '구매자',
+        amount: paymentListing.price,
+        orderId: `ORDER_${paymentListing.id}_${Date.now()}`,
+        orderName: paymentListing.title,
+        customerName: shippingInfo.name,
         successUrl: `${window.location.origin}/payment/success`,
         failUrl: `${window.location.origin}/payment/fail`,
       });
@@ -278,7 +313,7 @@ export const FurnitureMarketView: React.FC<FurnitureMarketViewProps> = () => {
             >
               <Heart size={24} fill={likedItems.has(listing.id) ? 'currentColor' : 'none'} />
             </button>
-            <Button fullWidth size="lg" onClick={() => handlePayment(listing)}>
+            <Button fullWidth size="lg" onClick={() => handleBuyClick(listing)}>
               <CreditCard size={20} className="mr-2" />
               바로 구매하기
             </Button>
@@ -655,6 +690,95 @@ export const FurnitureMarketView: React.FC<FurnitureMarketViewProps> = () => {
       {/* 모달들 */}
       {selectedListing && <DetailModal />}
       {showRegisterModal && <RegisterModal />}
+
+      {/* 배송정보 입력 모달 */}
+      {showShippingForm && paymentListing && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center animate-fade-in">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowShippingForm(false)} />
+          <div className="relative bg-white w-full max-w-md mx-4 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="h-14 border-b flex items-center justify-between px-4">
+              <h3 className="font-bold text-lg">배송 정보 입력</h3>
+              <button onClick={() => setShowShippingForm(false)} className="p-2 hover:bg-gray-100 rounded-full">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+              {/* 상품 요약 */}
+              <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-3">
+                {paymentListing.images[0] && (
+                  <img src={paymentListing.images[0]} alt="" className="w-16 h-16 rounded-lg object-cover" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{paymentListing.title}</p>
+                  <p className="font-bold text-brand-600">{paymentListing.price.toLocaleString()}원</p>
+                </div>
+              </div>
+
+              {/* 배송정보 폼 */}
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">받는 분 *</label>
+                  <input
+                    type="text"
+                    placeholder="이름"
+                    value={shippingInfo.name}
+                    onChange={e => setShippingInfo({...shippingInfo, name: e.target.value})}
+                    className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">연락처 *</label>
+                  <input
+                    type="tel"
+                    placeholder="010-0000-0000"
+                    value={shippingInfo.phone}
+                    onChange={e => setShippingInfo({...shippingInfo, phone: e.target.value})}
+                    className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">배송 주소 *</label>
+                  <input
+                    type="text"
+                    placeholder="주소 검색"
+                    value={shippingInfo.address}
+                    onChange={e => setShippingInfo({...shippingInfo, address: e.target.value})}
+                    className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 mb-2"
+                  />
+                  <input
+                    type="text"
+                    placeholder="상세 주소 (동/호수)"
+                    value={shippingInfo.addressDetail}
+                    onChange={e => setShippingInfo({...shippingInfo, addressDetail: e.target.value})}
+                    className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">배송 메모</label>
+                  <input
+                    type="text"
+                    placeholder="부재 시 문 앞에 놓아주세요"
+                    value={shippingInfo.memo}
+                    onChange={e => setShippingInfo({...shippingInfo, memo: e.target.value})}
+                    className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t bg-gray-50">
+              <Button fullWidth size="lg" onClick={handlePayment}>
+                <CreditCard size={20} className="mr-2" />
+                {paymentListing.price.toLocaleString()}원 결제하기
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
