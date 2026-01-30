@@ -68,6 +68,7 @@ interface PM {
   profile_image?: string;
   specialties: string[];
   introduction?: string;
+  greeting_message?: string;
   experience_years?: number;
   completed_projects: number;
   rating: number;
@@ -159,7 +160,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
 
   // PM 폼
   const [pmForm, setPMForm] = useState<Partial<PM>>({
-    name: '', email: '', phone: '', profile_image: '', specialties: [], introduction: '', completed_projects: 0, is_available: true
+    name: '', email: '', phone: '', profile_image: '', specialties: [], introduction: '', greeting_message: '', completed_projects: 0, is_available: true
   });
   const [newSpecialty, setNewSpecialty] = useState('');
 
@@ -333,6 +334,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
       profile_image: pmForm.profile_image,
       specialties: pmForm.specialties || [],
       introduction: pmForm.introduction || '',
+      greeting_message: pmForm.greeting_message || '안녕하세요! 담당 PM입니다. 창업 준비를 함께 도와드리겠습니다.',
       completed_projects: pmForm.completed_projects || 0,
       is_available: pmForm.is_available ?? true,
       rating: pmForm.rating || 5.0
@@ -346,7 +348,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
 
     setShowPMModal(false);
     setEditingPM(null);
-    setPMForm({ name: '', email: '', phone: '', specialties: [], introduction: '', completed_projects: 0, is_available: true });
+    setPMForm({ name: '', email: '', phone: '', specialties: [], introduction: '', greeting_message: '', completed_projects: 0, is_available: true });
     setNewSpecialty('');
     loadPMs();
   };
@@ -1356,15 +1358,27 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                 <input type="tel" className="w-full px-4 py-2 border rounded-lg" value={pmForm.phone} onChange={(e) => setPMForm({ ...pmForm, phone: e.target.value })} />
               </div>
 
-              {/* 인삿말 */}
+              {/* 프로필 소개 */}
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">인삿말 (고객에게 표시)</label>
+                <label className="block text-sm font-bold text-gray-700 mb-1">프로필 소개 (PM 카드에 표시)</label>
                 <textarea
                   className="w-full px-4 py-2 border rounded-lg resize-none h-20"
-                  placeholder="안녕하세요! 창업 성공을 도와드리는 PM입니다."
+                  placeholder="강남구 전문 PM입니다. 카페/음식점 창업 경험 다수."
                   value={pmForm.introduction || ''}
                   onChange={(e) => setPMForm({ ...pmForm, introduction: e.target.value })}
                 />
+              </div>
+
+              {/* 자동 인사 메시지 */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">자동 인사 메시지 (프로젝트 배정 시 첫 메시지)</label>
+                <textarea
+                  className="w-full px-4 py-2 border rounded-lg resize-none h-24"
+                  placeholder="안녕하세요! 담당 PM입니다. 창업 준비를 함께 도와드리겠습니다."
+                  value={pmForm.greeting_message || ''}
+                  onChange={(e) => setPMForm({ ...pmForm, greeting_message: e.target.value })}
+                />
+                <p className="text-xs text-gray-500 mt-1">고객에게 PM 배정 시 자동으로 전송되는 첫 인사 메시지입니다.</p>
               </div>
 
               {/* 태그/전문분야 */}

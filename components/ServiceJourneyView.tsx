@@ -26,6 +26,7 @@ interface ProjectManager {
   profile_image: string;
   specialties: string[];
   introduction: string;
+  greeting_message?: string;
   rating: number;
   completed_projects: number;
 }
@@ -515,6 +516,7 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
           profile_image: randomPM.profile_image || '/favicon-new.png',
           specialties: randomPM.specialties || [],
           introduction: randomPM.introduction || '강남구 전문 PM입니다.',
+          greeting_message: randomPM.greeting_message || '안녕하세요! 담당 PM입니다. 창업 준비를 함께 도와드리겠습니다.',
           rating: randomPM.rating || 5.0,
           completed_projects: randomPM.completed_projects || 0
         };
@@ -527,6 +529,7 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
           profile_image: '/favicon-new.png',
           specialties: ['카페', '음식점', '소매'],
           introduction: '강남구 전문 PM입니다.',
+          greeting_message: '안녕하세요! 담당 PM입니다. 창업 준비를 함께 도와드리겠습니다.',
           rating: 5.0,
           completed_projects: 0
         };
@@ -561,7 +564,7 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
         systemMsg += `⚠️ 도움 필요: ${worryItems.join(', ')}\n`;
       }
 
-      const pmGreeting = guestPM.introduction || '강남구 창업 전문 PM입니다.';
+      const pmGreeting = guestPM.greeting_message || guestPM.introduction || '강남구 창업 전문 PM입니다.';
       const guestMessages: Message[] = [
         {
           id: 'guest-sys-1',
@@ -652,11 +655,12 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
         });
       }
 
-      // PM 환영 메시지
+      // PM 환영 메시지 (PM 개인 인사 메시지 사용)
+      const pmGreetingMsg = pm.greeting_message || '안녕하세요! 담당 PM입니다. 창업 준비를 함께 도와드리겠습니다.';
       await supabase.from('project_messages').insert({
         project_id: newProject.id,
         sender_type: 'PM',
-        message: `안녕하세요! 담당 PM ${pm.name}입니다 😊\n\n강남구 ${dong} ${category?.label} 창업을 함께 하게 되어 반갑습니다.\n\n${worryItems.length > 0 ? `말씀하신 ${worryItems[0]} 관련해서 제가 자세히 안내드릴게요.\n\n` : ''}곧 전화드리겠습니다!`
+        message: `안녕하세요! 담당 PM ${pm.name}입니다 😊\n\n${pmGreetingMsg}\n\n강남구 ${dong} ${category?.label} 창업을 함께 하게 되어 반갑습니다.\n\n${worryItems.length > 0 ? `말씀하신 ${worryItems[0]} 관련해서 제가 자세히 안내드릴게요.\n\n` : ''}곧 전화드리겠습니다!`
       });
 
       loadMessages(newProject.id);
