@@ -5,7 +5,8 @@ import {
   User, Phone, Mail, Camera, Save, LogOut, Briefcase, MessageCircle,
   ChevronRight, Check, Clock, Loader2, Send, ArrowRight, X,
   Star, Award, MapPin, Calendar, CheckCircle, AlertTriangle,
-  ClipboardList, Building2, ChevronDown, ExternalLink, AlertCircle
+  ClipboardList, Building2, ChevronDown, ExternalLink, AlertCircle,
+  Image, Eye, EyeOff, Paperclip
 } from 'lucide-react';
 
 interface PMPortalViewProps {
@@ -70,6 +71,8 @@ interface Message {
   project_id: string;
   sender_type: 'USER' | 'PM' | 'SYSTEM';
   message: string;
+  attachments?: { url: string; type: string; name: string }[];
+  is_read: boolean;
   created_at: string;
 }
 
@@ -120,7 +123,11 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
   const [showPartnerModal, setShowPartnerModal] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'chat' | 'checklist'>('checklist');
   const [selectedChecklistCategory, setSelectedChecklistCategory] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadPMData();
@@ -282,17 +289,80 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedProject) return;
+    if ((!newMessage.trim() && !selectedImage) || !selectedProject) return;
 
     setSending(true);
+
+    let attachments: { url: string; type: string; name: string }[] | undefined;
+
+    // 이미지 업로드 처리
+    if (selectedImage) {
+      setUploadingImage(true);
+      const fileExt = selectedImage.name.split('.').pop();
+      const fileName = `${selectedProject.id}/${Date.now()}.${fileExt}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('chat-images')
+        .upload(fileName, selectedImage);
+
+      if (!uploadError && uploadData) {
+        const { data: urlData } = supabase.storage
+          .from('chat-images')
+          .getPublicUrl(fileName);
+
+        attachments = [{
+          url: urlData.publicUrl,
+          type: selectedImage.type,
+          name: selectedImage.name
+        }];
+      }
+      setUploadingImage(false);
+    }
+
     await supabase.from('project_messages').insert({
       project_id: selectedProject.id,
       sender_type: 'PM',
-      message: newMessage.trim()
+      message: newMessage.trim() || '📷 이미지',
+      attachments: attachments || null
     });
 
     setNewMessage('');
+    setSelectedImage(null);
+    setImagePreview(null);
     setSending(false);
+  };
+
+  // 읽음 상태 토글 (PM 수동 제어)
+  const toggleReadStatus = async (messageId: string, currentStatus: boolean) => {
+    await supabase
+      .from('project_messages')
+      .update({ is_read: !currentStatus })
+      .eq('id', messageId);
+
+    if (selectedProject) {
+      loadMessages(selectedProject.id);
+    }
+  };
+
+  // 이미지 선택 핸들러
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const cancelImageUpload = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const advanceProjectStep = async () => {
@@ -752,6 +822,20 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
                         key={msg.id}
                         className={`flex ${msg.sender_type === 'PM' ? 'justify-end' : 'justify-start'}`}
                       >
+                        {/* 고객 메시지에 읽음 토글 버튼 */}
+                        {msg.sender_type === 'USER' && (
+                          <button
+                            onClick={() => toggleReadStatus(msg.id, msg.is_read)}
+                            className={`mr-2 p-1.5 rounded-full self-end mb-1 transition-colors ${
+                              msg.is_read
+                                ? 'bg-brand-100 text-brand-600 hover:bg-brand-200'
+                                : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                            }`}
+                            title={msg.is_read ? '읽음 표시 해제' : '읽음 표시'}
+                          >
+                            {msg.is_read ? <Eye size={14} /> : <EyeOff size={14} />}
+                          </button>
+                        )}
                         <div
                           className={`max-w-[70%] rounded-2xl px-4 py-3 ${
                             msg.sender_type === 'PM'
@@ -764,15 +848,36 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
                           {msg.sender_type === 'USER' && (
                             <p className="text-xs text-gray-400 font-bold mb-1">고객</p>
                           )}
-                          <p className="whitespace-pre-wrap text-sm">{msg.message}</p>
-                          <p className={`text-[10px] mt-1 ${
+                          {/* 이미지 첨부파일 표시 */}
+                          {msg.attachments && msg.attachments.length > 0 && (
+                            <div className="mb-2">
+                              {msg.attachments.map((att, idx) => (
+                                <img
+                                  key={idx}
+                                  src={att.url}
+                                  alt={att.name}
+                                  className="max-w-full rounded-lg cursor-pointer hover:opacity-90"
+                                  onClick={() => window.open(att.url, '_blank')}
+                                />
+                              ))}
+                            </div>
+                          )}
+                          {msg.message !== '📷 이미지' && (
+                            <p className="whitespace-pre-wrap text-sm">{msg.message}</p>
+                          )}
+                          <div className={`flex items-center gap-2 mt-1 ${
                             msg.sender_type === 'PM' ? 'text-white/70' : 'text-gray-400'
                           }`}>
-                            {new Date(msg.created_at).toLocaleTimeString('ko-KR', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
+                            <span className="text-[10px]">
+                              {new Date(msg.created_at).toLocaleTimeString('ko-KR', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                            {msg.sender_type === 'USER' && msg.is_read && (
+                              <span className="text-[10px] text-brand-500 font-bold">읽음</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))
@@ -780,18 +885,47 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
                   <div ref={messagesEndRef} />
                 </div>
 
+                {/* 이미지 미리보기 */}
+                {imagePreview && (
+                  <div className="bg-gray-100 border-t p-3">
+                    <div className="relative inline-block">
+                      <img src={imagePreview} alt="미리보기" className="h-20 rounded-lg" />
+                      <button
+                        onClick={cancelImageUpload}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* 메시지 입력 */}
                 <div className="bg-white border-t p-4">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageSelect}
+                  />
                   <div className="flex gap-3">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="p-3 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+                      disabled={uploadingImage}
+                    >
+                      {uploadingImage ? <Loader2 className="animate-spin" size={20} /> : <Image size={20} className="text-gray-500" />}
+                    </button>
                     <input
                       type="text"
                       placeholder="메시지를 입력하세요..."
                       className="flex-1 px-4 py-3 bg-gray-100 rounded-xl"
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                      onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
                     />
-                    <Button onClick={sendMessage} disabled={sending || !newMessage.trim()}>
+                    <Button onClick={sendMessage} disabled={sending || (!newMessage.trim() && !selectedImage)}>
                       {sending ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
                     </Button>
                   </div>

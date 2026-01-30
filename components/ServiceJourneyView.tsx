@@ -47,6 +47,8 @@ interface Message {
   id: string;
   sender_type: 'USER' | 'PM' | 'SYSTEM';
   message: string;
+  attachments?: { url: string; type: string; name: string }[];
+  is_read?: boolean;
   created_at: string;
 }
 
@@ -1058,15 +1060,37 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
                   {msg.sender_type === 'SYSTEM' && (
                     <p className="text-xs text-gray-400 font-bold mb-1">시스템</p>
                   )}
-                  <p className="whitespace-pre-wrap text-sm">{msg.message}</p>
-                  <p className={`text-[10px] mt-1 ${
+                  {/* 이미지 첨부파일 표시 */}
+                  {msg.attachments && msg.attachments.length > 0 && (
+                    <div className="mb-2">
+                      {msg.attachments.map((att, idx) => (
+                        <img
+                          key={idx}
+                          src={att.url}
+                          alt={att.name}
+                          className="max-w-full rounded-lg cursor-pointer hover:opacity-90"
+                          onClick={() => window.open(att.url, '_blank')}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  {msg.message !== '📷 이미지' && (
+                    <p className="whitespace-pre-wrap text-sm">{msg.message}</p>
+                  )}
+                  <div className={`flex items-center gap-2 mt-1 ${
                     msg.sender_type === 'USER' ? 'text-white/70' : 'text-gray-400'
                   }`}>
-                    {new Date(msg.created_at).toLocaleTimeString('ko-KR', {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
+                    <span className="text-[10px]">
+                      {new Date(msg.created_at).toLocaleTimeString('ko-KR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                    {/* 내가 보낸 메시지에 읽음 표시 */}
+                    {msg.sender_type === 'USER' && msg.is_read && (
+                      <span className="text-[10px]">✓ 읽음</span>
+                    )}
+                  </div>
                 </div>
               </div>
             ))
