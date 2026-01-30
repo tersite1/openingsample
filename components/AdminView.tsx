@@ -65,11 +65,12 @@ interface PM {
   email: string;
   phone: string;
   profile_image?: string;
-  specialty: string[];
-  active_projects: number;
-  total_projects: number;
+  specialties: string[];
+  introduction?: string;
+  experience_years?: number;
+  completed_projects: number;
   rating: number;
-  is_active: boolean;
+  is_available: boolean;
   created_at: string;
 }
 
@@ -128,8 +129,9 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
 
   // PM 폼
   const [pmForm, setPMForm] = useState<Partial<PM>>({
-    name: '', email: '', phone: '', profile_image: '', specialty: [], is_active: true
+    name: '', email: '', phone: '', profile_image: '', specialties: [], introduction: '', completed_projects: 0, is_available: true
   });
+  const [newSpecialty, setNewSpecialty] = useState('');
 
   useEffect(() => {
     loadAllData();
@@ -243,19 +245,28 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
       return;
     }
 
+    const pmData = {
+      name: pmForm.name,
+      email: pmForm.email,
+      phone: pmForm.phone,
+      profile_image: pmForm.profile_image,
+      specialties: pmForm.specialties || [],
+      introduction: pmForm.introduction || '',
+      completed_projects: pmForm.completed_projects || 0,
+      is_available: pmForm.is_available ?? true,
+      rating: pmForm.rating || 5.0
+    };
+
     if (editingPM) {
-      await supabase.from('project_managers').update(pmForm).eq('id', editingPM.id);
+      await supabase.from('project_managers').update(pmData).eq('id', editingPM.id);
     } else {
-      await supabase.from('project_managers').insert([{
-        ...pmForm,
-        completed_projects: 0,
-        rating: 5.0
-      }]);
+      await supabase.from('project_managers').insert([pmData]);
     }
 
     setShowPMModal(false);
     setEditingPM(null);
-    setPMForm({ name: '', email: '', phone: '', specialty: [], is_active: true });
+    setPMForm({ name: '', email: '', phone: '', specialties: [], introduction: '', completed_projects: 0, is_available: true });
+    setNewSpecialty('');
     loadPMs();
   };
 
@@ -684,11 +695,27 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                             </div>
                           </div>
                           <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                            pm.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                            pm.is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                           }`}>
-                            {pm.is_active ? '활성' : '비활성'}
+                            {pm.is_available ? '활성' : '비활성'}
                           </span>
                         </div>
+
+                        {/* 태그 */}
+                        {pm.specialties && pm.specialties.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {pm.specialties.map((tag, idx) => (
+                              <span key={idx} className="px-2 py-0.5 bg-brand-50 text-brand-700 text-xs rounded-full">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* 인삿말 */}
+                        {pm.introduction && (
+                          <p className="text-xs text-gray-500 mb-3 line-clamp-2 italic">"{pm.introduction}"</p>
+                        )}
 
                         <div className="space-y-2 text-sm mb-4">
                           <div className="flex justify-between">
@@ -696,12 +723,12 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                             <span>{pm.phone || '-'}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-500">진행중 프로젝트</span>
-                            <span className="font-bold text-brand-600">{pm.active_projects || 0}개</span>
+                            <span className="text-gray-500">완료 프로젝트</span>
+                            <span className="font-bold text-brand-600">{pm.completed_projects || 0}건</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-500">총 프로젝트</span>
-                            <span>{pm.total_projects || 0}개</span>
+                            <span className="text-gray-500">평점</span>
+                            <span className="font-bold text-yellow-600">★ {pm.rating?.toFixed(1) || '5.0'}</span>
                           </div>
                         </div>
 
@@ -971,10 +998,10 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
       {/* PM 추가/수정 모달 */}
       {showPMModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-2xl w-full max-w-md m-4">
-            <div className="border-b px-6 py-4 flex items-center justify-between">
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto m-4">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between z-10">
               <h2 className="text-xl font-bold">{editingPM ? 'PM 수정' : 'PM 추가'}</h2>
-              <button onClick={() => { setShowPMModal(false); setEditingPM(null); }} className="p-2 hover:bg-gray-100 rounded-full">
+              <button onClick={() => { setShowPMModal(false); setEditingPM(null); setNewSpecialty(''); }} className="p-2 hover:bg-gray-100 rounded-full">
                 <X size={20} />
               </button>
             </div>
@@ -1048,6 +1075,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                   />
                 </div>
               </div>
+
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">이름 *</label>
                 <input type="text" className="w-full px-4 py-2 border rounded-lg" value={pmForm.name} onChange={(e) => setPMForm({ ...pmForm, name: e.target.value })} />
@@ -1060,13 +1088,83 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                 <label className="block text-sm font-bold text-gray-700 mb-1">연락처</label>
                 <input type="tel" className="w-full px-4 py-2 border rounded-lg" value={pmForm.phone} onChange={(e) => setPMForm({ ...pmForm, phone: e.target.value })} />
               </div>
+
+              {/* 인삿말 */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">인삿말 (고객에게 표시)</label>
+                <textarea
+                  className="w-full px-4 py-2 border rounded-lg resize-none h-20"
+                  placeholder="안녕하세요! 창업 성공을 도와드리는 PM입니다."
+                  value={pmForm.introduction || ''}
+                  onChange={(e) => setPMForm({ ...pmForm, introduction: e.target.value })}
+                />
+              </div>
+
+              {/* 태그/전문분야 */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">전문분야 태그</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {(pmForm.specialties || []).map((tag, idx) => (
+                    <span key={idx} className="px-3 py-1 bg-brand-50 text-brand-700 text-sm rounded-full flex items-center gap-1">
+                      {tag}
+                      <button
+                        onClick={() => setPMForm({ ...pmForm, specialties: pmForm.specialties?.filter((_, i) => i !== idx) })}
+                        className="hover:text-red-500"
+                      >
+                        <X size={14} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    className="flex-1 px-4 py-2 border rounded-lg"
+                    placeholder="태그 입력 (예: 카페, 음식점, 인테리어)"
+                    value={newSpecialty}
+                    onChange={(e) => setNewSpecialty(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && newSpecialty.trim()) {
+                        e.preventDefault();
+                        setPMForm({ ...pmForm, specialties: [...(pmForm.specialties || []), newSpecialty.trim()] });
+                        setNewSpecialty('');
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (newSpecialty.trim()) {
+                        setPMForm({ ...pmForm, specialties: [...(pmForm.specialties || []), newSpecialty.trim()] });
+                        setNewSpecialty('');
+                      }
+                    }}
+                  >
+                    추가
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Enter 또는 추가 버튼으로 태그 추가</p>
+              </div>
+
+              {/* 완료 프로젝트 수 */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">완료 프로젝트 수</label>
+                <input
+                  type="number"
+                  className="w-full px-4 py-2 border rounded-lg"
+                  value={pmForm.completed_projects || 0}
+                  onChange={(e) => setPMForm({ ...pmForm, completed_projects: Number(e.target.value) })}
+                  min={0}
+                />
+              </div>
+
               <div className="flex items-center gap-2">
-                <input type="checkbox" id="pm-active" checked={pmForm.is_active} onChange={(e) => setPMForm({ ...pmForm, is_active: e.target.checked })} />
-                <label htmlFor="pm-active" className="text-sm font-medium">활성화</label>
+                <input type="checkbox" id="pm-active" checked={pmForm.is_available ?? true} onChange={(e) => setPMForm({ ...pmForm, is_available: e.target.checked })} />
+                <label htmlFor="pm-active" className="text-sm font-medium">활성화 (매칭 가능)</label>
               </div>
             </div>
-            <div className="border-t px-6 py-4 flex justify-end gap-3">
-              <Button variant="outline" onClick={() => { setShowPMModal(false); setEditingPM(null); }}>취소</Button>
+            <div className="sticky bottom-0 bg-white border-t px-6 py-4 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => { setShowPMModal(false); setEditingPM(null); setNewSpecialty(''); }}>취소</Button>
               <Button onClick={savePM}><Save size={18} className="mr-2" />{editingPM ? '수정' : '추가'}</Button>
             </div>
           </div>
