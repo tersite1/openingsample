@@ -57,6 +57,11 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onAdminLog
         if (password.length < 6) {
           throw new Error('비밀번호는 6자 이상이어야 합니다.');
         }
+        // 이메일 인증 리다이렉트 URL - 프로덕션 도메인 사용
+        const redirectUrl = window.location.hostname === 'localhost'
+          ? 'https://opening.run'
+          : window.location.origin;
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -66,7 +71,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onAdminLog
               phone: phone,
               signup_source: signupSource
             },
-            emailRedirectTo: window.location.origin
+            emailRedirectTo: redirectUrl
           }
         });
         if (error) throw error;

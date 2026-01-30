@@ -2,9 +2,9 @@ import React, { useState, useRef } from 'react';
 import { ConsultingBooking, OpenTaskItem, TaskDetailData, TaskCategoryGroup } from '../types';
 import { OPEN_PROCESS_TASKS, OPEN_TASK_CATEGORIES } from '../constants';
 import { Button, Input, Badge } from './Components';
-import { 
-  Check, X, ArrowRight, Settings, MapPin, Hammer, ShoppingBag, 
-  ShieldCheck, Zap, Box, FileText, Bike, Wine, Upload, Trash2, File as FileIcon
+import {
+  Check, X, ArrowRight, Settings, MapPin, Hammer, ShoppingBag,
+  ShieldCheck, Zap, Box, FileText, Bike, Wine, Upload, Trash2, File as FileIcon, Building2
 } from 'lucide-react';
 
 interface ConsultingModuleProps {
@@ -116,6 +116,7 @@ export const ConsultingModule: React.FC<ConsultingModuleProps> = ({
       case 'wine': return Wine;
       case 'bike': return Bike;
       case 'map': return MapPin;
+      case 'building': return Building2;
       case 'book': return FileText;
       case 'box': return Box;
       case 'user': return FileText;

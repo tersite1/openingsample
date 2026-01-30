@@ -56,6 +56,7 @@ function App() {
   const [isPM, setIsPM] = useState(false);
   const [pmId, setPmId] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [isGuestMode, setIsGuestMode] = useState(false);
 
   const [currentTab, setCurrentTab] = useState<MainTab>('HOME');
   const [appMode, setAppMode] = useState<AppStep>('TAB_VIEW');
@@ -148,6 +149,7 @@ function App() {
       setIsAdmin(false);
       setIsPM(false);
       setPmId(null);
+      setIsGuestMode(false);
       setCurrentTab('HOME');
   };
 
@@ -194,7 +196,12 @@ function App() {
   };
 
   const handleGuestLogin = () => {
-      setUser(ADMIN_USER);
+      // 게스트 모드 활성화 - DB와 완전히 격리됨
+      setIsGuestMode(true);
+      setUser({
+        ...ADMIN_USER,
+        id: `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` // 고유 세션 ID
+      });
       setIsAuthenticated(true);
       // 게스트는 빈 상태로 시작 (다른 사람의 데이터 보이지 않음)
       setConsultingBookings([]);
@@ -629,6 +636,7 @@ function App() {
             {currentTab === 'PROJECT' && (
                 <ServiceJourneyView
                     onBack={() => setCurrentTab('HOME')}
+                    isGuestMode={isGuestMode}
                 />
             )}
         </div>

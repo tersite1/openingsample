@@ -986,6 +986,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                     src={pmForm.profile_image || '/favicon-new.png'}
                     alt="프로필"
                     className="w-24 h-24 rounded-full object-cover border-4 border-brand-100"
+                    onError={(e) => { (e.target as HTMLImageElement).src = '/favicon-new.png'; }}
                   />
                   <label className="absolute bottom-0 right-0 w-8 h-8 bg-brand-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-brand-700 transition-colors">
                     <Image size={16} className="text-white" />
@@ -996,18 +997,56 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
-                        const fileExt = file.name.split('.').pop();
-                        const fileName = `pm_${Date.now()}.${fileExt}`;
-                        const { error } = await supabase.storage.from('profiles').upload(fileName, file);
-                        if (!error) {
-                          const { data } = supabase.storage.from('profiles').getPublicUrl(fileName);
-                          setPMForm({ ...pmForm, profile_image: data.publicUrl });
+
+                        // Show loading state
+                        const loadingUrl = pmForm.profile_image;
+                        setPMForm({ ...pmForm, profile_image: '' });
+
+                        try {
+                          const fileExt = file.name.split('.').pop();
+                          const fileName = `pm_${Date.now()}.${fileExt}`;
+
+                          // Try uploading to avatars bucket first, then profiles
+                          let uploadError: any = null;
+                          let bucketName = 'avatars';
+
+                          const { error: avatarsError } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true });
+                          if (avatarsError) {
+                            bucketName = 'profiles';
+                            const { error: profilesError } = await supabase.storage.from('profiles').upload(fileName, file, { upsert: true });
+                            uploadError = profilesError;
+                          }
+
+                          if (uploadError) {
+                            console.error('파일 업로드 실패:', uploadError);
+                            alert(`이미지 업로드 실패: ${uploadError.message}\n\nSupabase Storage에 'avatars' 또는 'profiles' 버킷을 생성하고 Public 접근을 허용해주세요.`);
+                            setPMForm({ ...pmForm, profile_image: loadingUrl });
+                            return;
+                          }
+
+                          const { data: urlData } = supabase.storage.from(bucketName).getPublicUrl(fileName);
+                          setPMForm({ ...pmForm, profile_image: urlData.publicUrl });
+                          console.log('이미지 업로드 성공:', urlData.publicUrl);
+                        } catch (err: any) {
+                          console.error('업로드 오류:', err);
+                          alert('이미지 업로드 중 오류가 발생했습니다.');
+                          setPMForm({ ...pmForm, profile_image: loadingUrl });
                         }
                       }}
                     />
                   </label>
                 </div>
                 <p className="text-xs text-gray-500 mt-2">클릭하여 사진 변경</p>
+                {/* 직접 URL 입력 옵션 */}
+                <div className="mt-3 w-full">
+                  <input
+                    type="text"
+                    placeholder="또는 이미지 URL 직접 입력"
+                    className="w-full px-3 py-2 border rounded-lg text-xs"
+                    value={pmForm.profile_image || ''}
+                    onChange={(e) => setPMForm({ ...pmForm, profile_image: e.target.value })}
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">이름 *</label>

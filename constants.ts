@@ -105,6 +105,7 @@ export const OPEN_PROCESS_TASKS: OpenTaskItem[] = [
 
   // 3. 입지/정보
   { id: 'find_store', category: 'INFO', title: '점포 찾기', description: '상권 분석 및 매물 추천', iconType: 'map' },
+  { id: 'real_estate', category: 'INFO', title: '부동산 중개', description: '전문 부동산 연결 및 계약 지원', iconType: 'building' },
   { id: 'owner_guide', category: 'INFO', title: '사장님 필독', description: '인허가/행정 가이드', iconType: 'book' },
 
   // 4. 오프닝 패키지 (핵심)

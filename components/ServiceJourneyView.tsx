@@ -16,6 +16,7 @@ import {
 
 interface ServiceJourneyViewProps {
   onBack?: () => void;
+  isGuestMode?: boolean;
 }
 
 interface ProjectManager {
@@ -200,9 +201,9 @@ const DONG_COORDINATES: Record<string, { lat: number; lng: number }> = {
   '일원동': { lat: 37.4836, lng: 127.0856 },
 };
 
-export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }) => {
+export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, isGuestMode = false }) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isGuestMode); // 게스트 모드는 로딩 없음
   const [project, setProject] = useState<Project | null>(null);
 
   // 폼 데이터
@@ -230,10 +231,18 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 기존 프로젝트 로드
+  // UI 상태
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showCostBreakdown, setShowCostBreakdown] = useState(false);
+
+  // 기존 프로젝트 로드 (게스트 모드가 아닐 때만)
   useEffect(() => {
-    loadExistingProject();
-  }, []);
+    if (!isGuestMode) {
+      loadExistingProject();
+    }
+  }, [isGuestMode]);
 
   // 메시지 스크롤
   useEffect(() => {
@@ -305,17 +314,126 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !project) return;
+    if (!newMessage.trim()) return;
 
+    const messageText = newMessage.trim();
     setSending(true);
-    await supabase.from('project_messages').insert({
-      project_id: project.id,
-      sender_type: 'USER',
-      message: newMessage.trim()
-    });
+
+    // 게스트 모드: 로컬 상태로만 처리
+    if (isGuestMode) {
+      const guestMessage: Message = {
+        id: `guest-msg-${Date.now()}`,
+        sender_type: 'USER',
+        message: messageText,
+        created_at: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, guestMessage]);
+
+      // 게스트 모드에서 PM 자동 응답 시뮬레이션
+      setTimeout(() => {
+        const pmResponse: Message = {
+          id: `guest-pm-${Date.now()}`,
+          sender_type: 'PM',
+          message: '안녕하세요! 게스트 모드에서는 메시지 기능을 체험해보실 수 있습니다. 실제 PM과 상담을 원하시면 회원가입 후 이용해주세요 😊',
+          created_at: new Date().toISOString()
+        };
+        setMessages(prev => [...prev, pmResponse]);
+      }, 1000);
+
+      setNewMessage('');
+      setSending(false);
+      return;
+    }
+
+    // 실제 사용자: DB에 저장
+    if (!project?.id) {
+      setSending(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.from('project_messages').insert({
+        project_id: project.id,
+        sender_type: 'USER',
+        message: messageText
+      }).select().single();
+
+      if (error) {
+        console.error('메시지 전송 오류:', error);
+        // 에러가 있어도 UI에 메시지를 즉시 표시 (낙관적 업데이트)
+        const tempMessage: Message = {
+          id: `temp-${Date.now()}`,
+          sender_type: 'USER',
+          message: messageText,
+          created_at: new Date().toISOString()
+        };
+        setMessages(prev => [...prev, tempMessage]);
+      } else if (data) {
+        // Realtime이 작동하지 않을 경우를 대비해 직접 추가
+        setMessages(prev => {
+          const exists = prev.some(m => m.id === data.id);
+          if (exists) return prev;
+          return [...prev, data];
+        });
+      }
+    } catch (err) {
+      console.error('메시지 전송 실패:', err);
+    }
 
     setNewMessage('');
     setSending(false);
+  };
+
+  // 프로젝트 취소
+  const cancelProject = async () => {
+    // 게스트 모드: 로컬 상태만 초기화
+    if (isGuestMode) {
+      setProject(null);
+      setAssignedPM(null);
+      setCurrentStep(1);
+      setBusinessCategory('');
+      setDong('');
+      setStoreSize(15);
+      setChecklist([]);
+      setMessages([]);
+      setShowCancelDialog(false);
+      if (onBack) onBack();
+      return;
+    }
+
+    // 실제 사용자: DB 업데이트
+    if (!project?.id) return;
+
+    try {
+      await supabase
+        .from('startup_projects')
+        .update({ status: 'CANCELLED' })
+        .eq('id', project.id);
+
+      setProject(null);
+      setAssignedPM(null);
+      setCurrentStep(1);
+      setBusinessCategory('');
+      setDong('');
+      setStoreSize(15);
+      setChecklist([]);
+      setMessages([]);
+      setShowCancelDialog(false);
+    } catch (err) {
+      console.error('프로젝트 취소 실패:', err);
+    }
+  };
+
+  // 온보딩 애니메이션 시작
+  const startOnboarding = () => {
+    setShowOnboarding(true);
+    setOnboardingStep(0);
+  };
+
+  // 온보딩 완료 후 실제 시작
+  const completeOnboarding = () => {
+    setShowOnboarding(false);
+    setCurrentStep(1);
   };
 
   const formatPrice = (price: number) => {
@@ -373,10 +491,86 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
   // 프로젝트 생성
   const createProject = async () => {
     setLoading(true);
-    const pm = await assignPM();
 
     const worryItems = checklist.filter(i => i.status === 'worry').map(i => i.title);
     const doneItems = checklist.filter(i => i.status === 'done').map(i => i.title);
+    const category = BUSINESS_CATEGORIES.find(c => c.id === businessCategory);
+
+    // 게스트 모드: 로컬 상태로만 처리
+    if (isGuestMode) {
+      // 더미 PM 생성
+      const guestPM: ProjectManager = {
+        id: 'guest-pm',
+        name: '김오프닝',
+        phone: '010-1234-5678',
+        profile_image: '/favicon-new.png',
+        specialties: ['카페', '음식점', '소매'],
+        introduction: '강남구 전문 PM입니다.',
+        rating: 4.9,
+        completed_projects: 127
+      };
+      setAssignedPM(guestPM);
+
+      // 로컬 프로젝트 생성
+      const guestProject: Project = {
+        id: `guest-project-${Date.now()}`,
+        status: 'PM_ASSIGNED',
+        business_category: businessCategory,
+        location_dong: dong,
+        store_size: storeSize,
+        estimated_total: (estimatedCosts.min + estimatedCosts.max) / 2,
+        pm_id: guestPM.id,
+        pm: guestPM,
+        current_step: 7
+      };
+      setProject(guestProject);
+
+      // 로컬 메시지 생성
+      let systemMsg = `📋 프로젝트 요약\n\n`;
+      systemMsg += `• 업종: ${category?.label}\n`;
+      systemMsg += `• 위치: 강남구 ${dong}\n`;
+      systemMsg += `• 규모: ${storeSize}평\n`;
+      systemMsg += `• 예상 비용: ${formatPrice(estimatedCosts.min)} ~ ${formatPrice(estimatedCosts.max)}원\n\n`;
+
+      if (doneItems.length > 0) {
+        systemMsg += `✅ 이미 준비됨: ${doneItems.join(', ')}\n`;
+      }
+      if (worryItems.length > 0) {
+        systemMsg += `⚠️ 도움 필요: ${worryItems.join(', ')}\n`;
+      }
+
+      const guestMessages: Message[] = [
+        {
+          id: 'guest-sys-1',
+          sender_type: 'SYSTEM',
+          message: systemMsg,
+          created_at: new Date().toISOString()
+        },
+        {
+          id: 'guest-pm-welcome',
+          sender_type: 'PM',
+          message: `안녕하세요! 담당 PM ${guestPM.name}입니다 😊\n\n강남구 ${dong} ${category?.label} 창업을 함께 하게 되어 반갑습니다.\n\n${worryItems.length > 0 ? `말씀하신 ${worryItems[0]} 관련해서 제가 자세히 안내드릴게요.\n\n` : ''}이것은 게스트 모드 체험입니다. 실제 PM 상담을 원하시면 회원가입 후 이용해주세요!`,
+          created_at: new Date().toISOString()
+        }
+      ];
+
+      if (pmMessage.trim()) {
+        guestMessages.splice(1, 0, {
+          id: 'guest-user-1',
+          sender_type: 'USER',
+          message: pmMessage.trim(),
+          created_at: new Date().toISOString()
+        });
+      }
+
+      setMessages(guestMessages);
+      setCurrentStep(7);
+      setLoading(false);
+      return;
+    }
+
+    // 실제 사용자: DB에 저장
+    const pm = await assignPM();
 
     // 체크리스트 데이터 준비
     const checklistData = checklist.map(item => ({
@@ -407,7 +601,6 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
       setProject(newProject);
 
       // 초기 메시지 전송
-      const category = BUSINESS_CATEGORIES.find(c => c.id === businessCategory);
       let systemMsg = `📋 프로젝트 요약\n\n`;
       systemMsg += `• 업종: ${category?.label}\n`;
       systemMsg += `• 위치: 강남구 ${dong}\n`;
@@ -445,16 +638,16 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
 
       loadMessages(newProject.id);
       subscribeToMessages(newProject.id);
-      setCurrentStep(6);
+      setCurrentStep(7);
     }
     setLoading(false);
   };
 
   const goToNextStep = () => {
     if (currentStep === 6) {
-      createProject();
+      createProject(); // createProject에서 currentStep을 7로 설정함
     } else {
-      setCurrentStep(prev => Math.min(prev + 1, 7));
+      setCurrentStep(prev => Math.min(prev + 1, 6)); // 6까지만 버튼으로 이동, 7은 createProject에서
     }
   };
 
@@ -485,19 +678,202 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
     );
   }
 
+  // 온보딩 애니메이션 화면
+  if (showOnboarding) {
+    const onboardingSteps = [
+      { icon: Store, title: '업종 선택', desc: '어떤 창업을 준비하시나요?', color: 'bg-amber-500' },
+      { icon: MapPin, title: '위치 선택', desc: '창업 예정 지역 선택', color: 'bg-blue-500' },
+      { icon: BarChart3, title: '상권 분석', desc: 'AI가 분석하는 상권 정보', color: 'bg-purple-500' },
+      { icon: Ruler, title: '매장 규모', desc: '예상 평수 입력', color: 'bg-green-500' },
+      { icon: FileText, title: '준비 체크리스트', desc: '현재 상황 파악', color: 'bg-orange-500' },
+      { icon: Calculator, title: '예상 비용', desc: '창업 비용 자동 산출', color: 'bg-pink-500' },
+      { icon: HeartHandshake, title: 'PM 배정', desc: '전담 매니저 매칭', color: 'bg-brand-600' },
+    ];
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-brand-600 via-brand-700 to-indigo-800 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        {/* 배경 효과 */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden">
+          <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] bg-[radial-gradient(circle,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:20px_20px] animate-pulse" />
+        </div>
+
+        {/* 로고 */}
+        <div className="relative z-10 mb-8">
+          <div className="w-20 h-20 rounded-3xl bg-white shadow-2xl flex items-center justify-center overflow-hidden">
+            <img src="/favicon-new.png" alt="오프닝" className="w-full h-full" />
+          </div>
+        </div>
+
+        {/* 타이틀 */}
+        <h1 className="text-white text-2xl font-black mb-2 text-center relative z-10">
+          창업의 모든 과정을
+          <br />함께 합니다
+        </h1>
+        <p className="text-brand-200 text-sm mb-10 relative z-10">총 7단계로 진행됩니다</p>
+
+        {/* 단계 표시 */}
+        <div className="relative z-10 w-full max-w-sm space-y-3 mb-10">
+          {onboardingSteps.map((step, index) => {
+            const Icon = step.icon;
+            const isActive = index <= onboardingStep;
+            const isCurrent = index === onboardingStep;
+
+            return (
+              <div
+                key={index}
+                className={`flex items-center gap-4 p-3 rounded-2xl transition-all duration-500 ${
+                  isActive ? 'bg-white/20 backdrop-blur-sm' : 'bg-white/5'
+                } ${isCurrent ? 'scale-105 shadow-lg' : ''}`}
+                style={{
+                  opacity: isActive ? 1 : 0.4,
+                  transform: `translateX(${isActive ? 0 : 20}px)`,
+                  transitionDelay: `${index * 100}ms`
+                }}
+              >
+                <div className={`w-12 h-12 rounded-xl ${isActive ? step.color : 'bg-white/20'} flex items-center justify-center transition-all duration-300`}>
+                  {isActive ? (
+                    <Icon size={24} className="text-white" />
+                  ) : (
+                    <span className="text-white/50 font-bold">{index + 1}</span>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className={`font-bold ${isActive ? 'text-white' : 'text-white/50'}`}>
+                    {step.title}
+                  </p>
+                  <p className={`text-xs ${isActive ? 'text-white/80' : 'text-white/30'}`}>
+                    {step.desc}
+                  </p>
+                </div>
+                {isCurrent && (
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 진행 버튼 */}
+        <button
+          onClick={() => {
+            if (onboardingStep < onboardingSteps.length - 1) {
+              setOnboardingStep(prev => prev + 1);
+            } else {
+              completeOnboarding();
+            }
+          }}
+          className="relative z-10 w-full max-w-sm bg-white text-brand-700 font-bold py-4 rounded-2xl shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+        >
+          {onboardingStep < onboardingSteps.length - 1 ? (
+            <>다음<ChevronRight size={20} /></>
+          ) : (
+            <>
+              <Rocket size={20} />
+              시작하기
+            </>
+          )}
+        </button>
+
+        {/* 스킵 버튼 */}
+        <button
+          onClick={completeOnboarding}
+          className="relative z-10 mt-4 text-white/60 text-sm font-medium hover:text-white transition-colors"
+        >
+          건너뛰기
+        </button>
+      </div>
+    );
+  }
+
+  // 취소 확인 다이얼로그
+  const CancelDialog = () => {
+    const hasExistingProject = !!project?.id;
+
+    const handleCancel = () => {
+      if (hasExistingProject) {
+        cancelProject();
+      } else {
+        // 프로젝트가 없으면 그냥 초기화하고 뒤로가기
+        setShowCancelDialog(false);
+        setCurrentStep(1);
+        setBusinessCategory('');
+        setDong('');
+        setStoreSize(15);
+        setChecklist([]);
+        if (onBack) onBack();
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl w-full max-w-sm p-6 animate-scale-in">
+          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle size={32} className="text-red-600" />
+          </div>
+          <h3 className="text-xl font-bold text-center mb-2">
+            {hasExistingProject ? '프로젝트를 취소할까요?' : '창업 상담을 종료할까요?'}
+          </h3>
+          <p className="text-gray-500 text-center text-sm mb-6">
+            {hasExistingProject
+              ? '취소하면 현재까지의 진행 상황이 모두 삭제됩니다. 이 작업은 되돌릴 수 없습니다.'
+              : '현재까지 입력한 내용이 사라집니다.'}
+          </p>
+          <div className="space-y-2">
+            <button
+              onClick={handleCancel}
+              className="w-full py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors"
+            >
+              {hasExistingProject ? '프로젝트 취소' : '종료하기'}
+            </button>
+            <button
+              onClick={() => setShowCancelDialog(false)}
+              className="w-full py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+            >
+              계속 진행하기
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // PM 배정 후 화면 (Step 7+)
   if (currentStep >= 7 && assignedPM) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
+        {showCancelDialog && <CancelDialog />}
+
         {/* 깔끔한 헤더 */}
         <div className="bg-white border-b px-4 py-3">
           <div className="flex items-center gap-3">
-            <img src="/favicon-new.png" alt="오프닝" className="w-10 h-10 rounded-xl" />
+            <button
+              onClick={() => setShowCancelDialog(true)}
+              className="p-2 -ml-2 hover:bg-gray-100 rounded-full"
+            >
+              <X size={20} className="text-gray-500" />
+            </button>
             <div className="flex-1 min-w-0">
               <h1 className="font-bold text-lg text-slate-900 truncate">내 창업 프로젝트</h1>
               <p className="text-xs text-gray-500">
                 강남구 {dong} · {BUSINESS_CATEGORIES.find(c => c.id === businessCategory)?.label} · {storeSize}평
               </p>
+            </div>
+            <img src="/favicon-new.png" alt="오프닝" className="w-10 h-10 rounded-xl" />
+          </div>
+
+          {/* 진행 상태 표시 */}
+          <div className="mt-3 pt-3 border-t">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-brand-600">PM 배정 완료</span>
+              <span className="text-xs text-gray-400">7/7 단계</span>
+            </div>
+            <div className="flex gap-1">
+              {JOURNEY_STEPS.map(s => (
+                <div
+                  key={s.step}
+                  className="h-1.5 flex-1 rounded-full bg-brand-600"
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -537,18 +913,93 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
           </div>
         </div>
 
-        {/* 예상 비용 요약 */}
+        {/* 예상 비용 요약 (드롭다운) */}
         <div className="px-4 mb-2">
-          <div className="bg-gradient-to-r from-brand-600 to-brand-700 rounded-xl p-4 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-brand-100 mb-1">예상 창업 비용</p>
-                <p className="text-2xl font-bold">
-                  {formatPrice(estimatedCosts.min)} ~ {formatPrice(estimatedCosts.max)}원
-                </p>
+          <div className="bg-white rounded-xl border overflow-hidden">
+            {/* 헤더 - 클릭하면 펼쳐짐 */}
+            <button
+              onClick={() => setShowCostBreakdown(!showCostBreakdown)}
+              className="w-full bg-gradient-to-r from-brand-600 to-brand-700 p-4 text-white text-left"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-brand-100 mb-1">예상 창업 비용</p>
+                  <p className="text-2xl font-bold">
+                    {formatPrice(estimatedCosts.min)} ~ {formatPrice(estimatedCosts.max)}원
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-brand-200">상세보기</span>
+                  {showCostBreakdown ? (
+                    <ChevronUp size={20} className="text-white/70" />
+                  ) : (
+                    <ChevronDown size={20} className="text-white/70" />
+                  )}
+                </div>
               </div>
-              <Calculator size={32} className="text-white/30" />
-            </div>
+            </button>
+
+            {/* 상세 비용 내역 */}
+            {showCostBreakdown && (
+              <div className="p-4 bg-gray-50 border-t animate-fade-in">
+                <h4 className="font-bold text-sm text-gray-700 mb-3 flex items-center gap-2">
+                  <Calculator size={16} className="text-brand-600" />
+                  비용 상세 내역 (강남구 {dong} 기준)
+                </h4>
+
+                <div className="space-y-2 text-sm">
+                  {/* 보증금/권리금 */}
+                  <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                    <span className="text-gray-600">보증금 + 권리금 (예상)</span>
+                    <span className="font-bold">{formatPrice(storeSize * 300)} ~ {formatPrice(storeSize * 800)}원</span>
+                  </div>
+
+                  {/* 체크리스트 항목별 비용 */}
+                  {checklist.filter(i => i.status !== 'done' && i.estimatedCost.max > 0).map(item => {
+                    const isPerPyung = item.estimatedCost.unit.includes('평당');
+                    const min = item.estimatedCost.min * (isPerPyung ? storeSize : 1);
+                    const max = item.estimatedCost.max * (isPerPyung ? storeSize : 1);
+                    return (
+                      <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-600">{item.title}</span>
+                          {item.status === 'worry' && (
+                            <span className="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-bold">도움필요</span>
+                          )}
+                        </div>
+                        <span className="font-medium text-gray-800">
+                          {min > 0 ? `${formatPrice(min)} ~ ${formatPrice(max)}원` : '무료'}
+                        </span>
+                      </div>
+                    );
+                  })}
+
+                  {/* 이미 준비된 항목 */}
+                  {checklist.filter(i => i.status === 'done').length > 0 && (
+                    <div className="pt-2 mt-2">
+                      <p className="text-xs text-green-600 font-bold mb-1">✓ 이미 준비됨 (비용 제외)</p>
+                      <p className="text-xs text-gray-500">
+                        {checklist.filter(i => i.status === 'done').map(i => i.title).join(', ')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* 도움 필요 항목 요약 */}
+                  {checklist.filter(i => i.status === 'worry').length > 0 && (
+                    <div className="pt-2 mt-2 bg-orange-50 -mx-4 px-4 py-3 border-t border-orange-100">
+                      <p className="text-xs text-orange-700 font-bold mb-1">⚠️ PM이 중점 지원할 항목</p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {checklist.filter(i => i.status === 'worry').map(item => (
+                          <span key={item.id} className="text-xs bg-white text-orange-700 px-2 py-0.5 rounded-full border border-orange-200">
+                            {item.title}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -620,9 +1071,11 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
     );
   }
 
-  // 온보딩 단계 (1-5)
+  // 온보딩 단계 (1-6)
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      {showCancelDialog && <CancelDialog />}
+
       {/* 프로그레스 헤더 */}
       <div className="sticky top-0 bg-white border-b z-10">
         <div className="flex items-center justify-between px-4 h-14">
@@ -631,7 +1084,7 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
               <ChevronLeft size={24} />
             </button>
           ) : (
-            <button onClick={onBack} className="p-2 -ml-2 hover:bg-gray-100 rounded-full">
+            <button onClick={() => setShowCancelDialog(true)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full">
               <X size={24} />
             </button>
           )}
