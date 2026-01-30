@@ -26,7 +26,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, class
       {/* Logo */}
       <div className="h-16 flex items-center px-6 border-b border-gray-100 mb-4">
         <div className="flex items-center gap-2">
-             <img src="/logo.png" alt="오프닝" className="w-8 h-8" />
+             <img src="/favicon.png" alt="오프닝" className="w-8 h-8" />
              <span className="font-black text-xl tracking-tight text-slate-900">오프닝</span>
         </div>
       </div>

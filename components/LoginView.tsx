@@ -119,7 +119,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
         {/* Logo Header */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-brand-500/20 p-3">
-            <img src="/logo.png" alt="오프닝" className="w-full h-full" />
+            <img src="/favicon.png" alt="오프닝" className="w-full h-full" />
           </div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">오프닝</h1>
           <p className="text-slate-500 font-medium">성공적인 창업의 시작과 끝</p>
