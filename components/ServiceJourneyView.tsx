@@ -1132,7 +1132,7 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
       </div>
 
       {/* 컨텐츠 */}
-      <div className="flex-1 p-4 pb-32 overflow-y-auto">
+      <div className="flex-1 p-4 pb-40 overflow-y-auto">
         {/* Step 1: 업종 선택 */}
         {currentStep === 1 && (
           <div className="grid grid-cols-2 gap-3">
@@ -1490,13 +1490,14 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
         )}
       </div>
 
-      {/* 하단 버튼 */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t">
+      {/* 하단 버튼 - 모바일 safe area 대응 */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white border-t z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
         <Button
           fullWidth
           size="lg"
           disabled={!canProceed() || loading}
           onClick={goToNextStep}
+          className="h-14 text-base font-bold"
         >
           {loading ? (
             <Loader2 className="animate-spin" size={20} />
@@ -1507,7 +1508,7 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
             </>
           ) : (
             <>
-              다음
+              다음 단계로
               <ChevronRight size={20} className="ml-1" />
             </>
           )}
