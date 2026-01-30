@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import { supabase } from '../utils/supabaseClient';
-import { DoorOpen, ArrowRight, Lock, Mail, Loader2, Sparkles } from 'lucide-react';
+import { DoorOpen, ArrowRight, Lock, Mail, Loader2, Sparkles, Phone, User, ChevronDown } from 'lucide-react';
+
+const SIGNUP_SOURCES = [
+  { value: '', label: '가입 경로 선택' },
+  { value: 'search', label: '검색 (네이버/구글)' },
+  { value: 'instagram', label: '인스타그램' },
+  { value: 'youtube', label: '유튜브' },
+  { value: 'blog', label: '블로그' },
+  { value: 'friend', label: '지인 추천' },
+  { value: 'ad', label: '광고' },
+  { value: 'other', label: '기타' },
+];
 
 interface LoginViewProps {
   onLoginSuccess: () => void;
@@ -10,6 +21,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [signupSource, setSignupSource] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isRegister, setIsRegister] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,23 +39,46 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
         if (!name.trim()) {
           throw new Error('이름을 입력해주세요.');
         }
+        if (!phone.trim()) {
+          throw new Error('전화번호를 입력해주세요.');
+        }
+        if (!signupSource) {
+          throw new Error('가입 경로를 선택해주세요.');
+        }
         if (password.length < 6) {
           throw new Error('비밀번호는 6자 이상이어야 합니다.');
         }
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { full_name: name },
+            data: {
+              full_name: name,
+              phone: phone,
+              signup_source: signupSource
+            },
             emailRedirectTo: window.location.origin
           }
         });
         if (error) throw error;
-        setSuccessMessage("회원가입 확인 이메일을 발송했습니다. 이메일을 확인해주세요!");
+
+        // 회원가입 후 바로 로그인 시도
+        if (data.user) {
+          const { error: loginError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (!loginError) {
+            onLoginSuccess();
+            return;
+          }
+        }
+
+        setSuccessMessage("회원가입이 완료되었습니다! 로그인해주세요.");
         setIsRegister(false);
-        setEmail('');
         setPassword('');
-        setName('');
+        setPhone('');
+        setSignupSource('');
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -108,19 +144,54 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
 
           <form onSubmit={handleAuth} className="space-y-4">
             {isRegister && (
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 ml-1">이름</label>
-                <div className="relative group">
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-slate-50 border-none rounded-xl py-3.5 px-4 text-slate-900 font-medium focus:ring-2 focus:ring-brand-500 transition-all placeholder:text-slate-400"
-                    placeholder="홍길동"
-                    required={isRegister}
-                  />
+              <>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-500 ml-1">이름</label>
+                  <div className="relative group">
+                    <User className="absolute left-4 top-3.5 text-slate-400 group-focus-within:text-brand-500 transition-colors" size={20} />
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full bg-slate-50 border-none rounded-xl py-3.5 pl-12 pr-4 text-slate-900 font-medium focus:ring-2 focus:ring-brand-500 transition-all placeholder:text-slate-400"
+                      placeholder="홍길동"
+                      required={isRegister}
+                    />
+                  </div>
                 </div>
-              </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-500 ml-1">전화번호</label>
+                  <div className="relative group">
+                    <Phone className="absolute left-4 top-3.5 text-slate-400 group-focus-within:text-brand-500 transition-colors" size={20} />
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full bg-slate-50 border-none rounded-xl py-3.5 pl-12 pr-4 text-slate-900 font-medium focus:ring-2 focus:ring-brand-500 transition-all placeholder:text-slate-400"
+                      placeholder="010-1234-5678"
+                      required={isRegister}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-500 ml-1">가입 경로</label>
+                  <div className="relative group">
+                    <select
+                      value={signupSource}
+                      onChange={(e) => setSignupSource(e.target.value)}
+                      className="w-full bg-slate-50 border-none rounded-xl py-3.5 px-4 text-slate-900 font-medium focus:ring-2 focus:ring-brand-500 transition-all appearance-none cursor-pointer"
+                      required={isRegister}
+                    >
+                      {SIGNUP_SOURCES.map(source => (
+                        <option key={source.value} value={source.value}>{source.label}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-3.5 text-slate-400 pointer-events-none" size={20} />
+                  </div>
+                </div>
+              </>
             )}
 
             <div className="space-y-1">
