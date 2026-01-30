@@ -135,6 +135,9 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
   const [projectMessages, setProjectMessages] = useState<ProjectMessage[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [projectFilterPM, setProjectFilterPM] = useState<string | null>(null);
+  const [adminMessage, setAdminMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [adminMessageType, setAdminMessageType] = useState<'PM' | 'SYSTEM'>('PM');
 
   // 필터/검색
   const [searchQuery, setSearchQuery] = useState('');
@@ -203,6 +206,27 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
     if (data) {
       setProjectMessages(data);
     }
+  };
+
+  const sendAdminMessage = async () => {
+    if (!adminMessage.trim() || !selectedProjectId) return;
+
+    setSendingMessage(true);
+    const { error } = await supabase.from('project_messages').insert({
+      project_id: selectedProjectId,
+      sender_type: adminMessageType,
+      message: adminMessageType === 'SYSTEM'
+        ? `[관리자] ${adminMessage.trim()}`
+        : adminMessage.trim()
+    });
+
+    if (!error) {
+      setAdminMessage('');
+      loadProjectMessages(selectedProjectId);
+    } else {
+      alert('메시지 전송 실패: ' + error.message);
+    }
+    setSendingMessage(false);
   };
 
   const loadStats = async () => {
@@ -1029,48 +1053,103 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
 
                     {/* 채팅 내용 */}
                     <div className="flex-1 bg-white rounded-xl border overflow-hidden flex flex-col">
-                      <div className="px-4 py-3 bg-gray-50 border-b font-bold text-sm flex items-center gap-2">
-                        <MessageSquare size={16} />
-                        채팅 내용
+                      <div className="px-4 py-3 bg-gray-50 border-b font-bold text-sm flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <MessageSquare size={16} />
+                          채팅 내용
+                        </div>
+                        {selectedProjectId && (
+                          <button
+                            onClick={() => loadProjectMessages(selectedProjectId)}
+                            className="text-xs text-brand-600 hover:underline flex items-center gap-1"
+                          >
+                            <RefreshCw size={12} />
+                            새로고침
+                          </button>
+                        )}
                       </div>
                       {selectedProjectId ? (
-                        <div className="flex-1 p-4 space-y-3 overflow-y-auto max-h-[550px] bg-gray-50">
-                          {projectMessages.length === 0 ? (
-                            <div className="text-center py-12 text-gray-400">
-                              <MessageSquare size={32} className="mx-auto mb-2 opacity-50" />
-                              <p className="text-sm">메시지가 없습니다</p>
-                            </div>
-                          ) : (
-                            projectMessages.map(msg => (
-                              <div
-                                key={msg.id}
-                                className={`flex ${msg.sender_type === 'PM' ? 'justify-end' : 'justify-start'}`}
-                              >
-                                <div
-                                  className={`max-w-[80%] rounded-xl px-4 py-2 ${
-                                    msg.sender_type === 'PM'
-                                      ? 'bg-brand-600 text-white'
-                                      : msg.sender_type === 'USER'
-                                        ? 'bg-white border shadow-sm'
-                                        : 'bg-gray-200 text-gray-600'
-                                  }`}
-                                >
-                                  <p className={`text-xs font-bold mb-1 ${
-                                    msg.sender_type === 'PM' ? 'text-white/70' : 'text-gray-400'
-                                  }`}>
-                                    {msg.sender_type === 'PM' ? 'PM' : msg.sender_type === 'USER' ? '고객' : '시스템'}
-                                  </p>
-                                  <p className="whitespace-pre-wrap text-sm">{msg.message}</p>
-                                  <p className={`text-[10px] mt-1 ${
-                                    msg.sender_type === 'PM' ? 'text-white/50' : 'text-gray-300'
-                                  }`}>
-                                    {new Date(msg.created_at).toLocaleString('ko-KR')}
-                                  </p>
-                                </div>
+                        <>
+                          <div className="flex-1 p-4 space-y-3 overflow-y-auto max-h-[450px] bg-gray-50">
+                            {projectMessages.length === 0 ? (
+                              <div className="text-center py-12 text-gray-400">
+                                <MessageSquare size={32} className="mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">메시지가 없습니다</p>
                               </div>
-                            ))
-                          )}
-                        </div>
+                            ) : (
+                              projectMessages.map(msg => (
+                                <div
+                                  key={msg.id}
+                                  className={`flex ${msg.sender_type === 'PM' ? 'justify-end' : 'justify-start'}`}
+                                >
+                                  <div
+                                    className={`max-w-[80%] rounded-xl px-4 py-2 ${
+                                      msg.sender_type === 'PM'
+                                        ? 'bg-brand-600 text-white'
+                                        : msg.sender_type === 'USER'
+                                          ? 'bg-white border shadow-sm'
+                                          : 'bg-gray-200 text-gray-600'
+                                    }`}
+                                  >
+                                    <p className={`text-xs font-bold mb-1 ${
+                                      msg.sender_type === 'PM' ? 'text-white/70' : 'text-gray-400'
+                                    }`}>
+                                      {msg.sender_type === 'PM' ? 'PM' : msg.sender_type === 'USER' ? '고객' : '시스템'}
+                                    </p>
+                                    <p className="whitespace-pre-wrap text-sm">{msg.message}</p>
+                                    <p className={`text-[10px] mt-1 ${
+                                      msg.sender_type === 'PM' ? 'text-white/50' : 'text-gray-300'
+                                    }`}>
+                                      {new Date(msg.created_at).toLocaleString('ko-KR')}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+
+                          {/* Admin 메시지 입력 */}
+                          <div className="border-t p-4 bg-white">
+                            <div className="flex gap-2 mb-2">
+                              <button
+                                onClick={() => setAdminMessageType('PM')}
+                                className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                                  adminMessageType === 'PM'
+                                    ? 'bg-brand-600 text-white'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                              >
+                                PM으로 답장
+                              </button>
+                              <button
+                                onClick={() => setAdminMessageType('SYSTEM')}
+                                className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                                  adminMessageType === 'SYSTEM'
+                                    ? 'bg-gray-700 text-white'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                              >
+                                시스템 메시지
+                              </button>
+                            </div>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder={adminMessageType === 'PM' ? 'PM으로 메시지 보내기...' : '시스템 공지 보내기...'}
+                                className="flex-1 px-4 py-2 bg-gray-100 rounded-lg text-sm"
+                                value={adminMessage}
+                                onChange={(e) => setAdminMessage(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && sendAdminMessage()}
+                              />
+                              <Button
+                                onClick={sendAdminMessage}
+                                disabled={sendingMessage || !adminMessage.trim()}
+                              >
+                                {sendingMessage ? <RefreshCw className="animate-spin" size={18} /> : <Send size={18} />}
+                              </Button>
+                            </div>
+                          </div>
+                        </>
                       ) : (
                         <div className="flex-1 flex items-center justify-center text-gray-400">
                           <div className="text-center">
