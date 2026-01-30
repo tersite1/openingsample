@@ -1614,7 +1614,7 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
               <p className="text-yellow-700">이미 해결된 항목은 ✓, 걱정되는 항목은 ⚠️ 를 눌러주세요</p>
             </div>
 
-            {['공사/정리', '운영 준비', '입지/정보', '오프닝 패키지'].map(category => (
+            {['사전 준비', '입지/계약', '인허가/행정', '시설/공사', '집기/장비', '시스템 세팅', '인력/운영', '오픈/마케팅'].map(category => (
               <div key={category} className="bg-white rounded-xl border overflow-hidden">
                 <div className="bg-gray-50 px-4 py-2 border-b">
                   <h3 className="font-bold text-sm text-gray-700">{category}</h3>
