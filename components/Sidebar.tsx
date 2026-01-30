@@ -14,7 +14,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, className = '', hasActiveProject, onStartNewProject, onLogout }) => {
   const tabs: { id: MainTab; label: string; icon: React.ReactNode }[] = [
     { id: 'HOME', label: '홈', icon: <Home size={20} /> },
-    ...(hasActiveProject ? [{ id: 'PROJECT' as MainTab, label: '내 프로젝트', icon: <Rocket size={20} /> }] : []),
+    { id: 'PROJECT' as MainTab, label: hasActiveProject ? '내 프로젝트' : '창업 시작하기', icon: <Rocket size={20} /> },
     { id: 'FURNITURE', label: '가구 마켓', icon: <Armchair size={20} /> },
     { id: 'LISTINGS', label: '패키지 매물', icon: <ShoppingBag size={20} /> },
     { id: 'QUOTE', label: '견적 관리', icon: <FileText size={20} /> },

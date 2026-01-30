@@ -162,28 +162,12 @@ export const MOCK_OPENING_PACKAGES: Package[] = [
     totalPrice: 12000000, location: '서울 성동구', leadTimeDays: 14, has3D: true, badges: ['오프닝 검수', '철거포함'], grade: 'B', warranty: '3개월', tags: ['cafe', 'seongsu', 'today']
   },
   {
-    id: 'pkg_cafe_002', source: 'USER',
-    name: '프랜차이즈 카페 폐업 정리 (집기/머신)',
-    description: '메가/컴포즈 스타일. 제빙기 2대, 블렌더 2대, 포스기 포함.',
-    businessType: 'CAFE',
-    image: 'https://images.unsplash.com/photo-1507914464562-6b718842a633?q=80&w=1000',
-    items: [], totalPrice: 8500000, location: '인천 부평구', leadTimeDays: 7, has3D: false, badges: ['직거래', '급처'], grade: 'C', warranty: '없음', deadline: 'D-3', hopePrice: 8000000, tags: ['cafe', 'franchise', 'urgent']
-  },
-  {
     id: 'pkg_cafe_003', source: 'USER',
     name: '디저트 카페 쇼케이스 및 오븐',
     description: '900 사이즈 제과 쇼케이스(사각), 스메그 오븐 4단.',
     businessType: 'CAFE',
     image: 'https://images.unsplash.com/photo-1517433670267-08bbd4be890f?q=80&w=1000',
     items: [], totalPrice: 3200000, location: '서울 용산구', leadTimeDays: 5, has3D: false, badges: ['직거래', '상태좋음'], grade: 'A', warranty: '없음', deadline: 'D-14', hopePrice: 3000000, tags: ['cafe', 'dessert']
-  },
-  {
-    id: 'pkg_cafe_004', source: 'OPENING',
-    name: '베이커리 카페 주방 장비 세트',
-    description: '3단 데크오븐, 도우컨디셔너, 믹서기, 스텐 작업대 3개.',
-    businessType: 'CAFE',
-    image: 'https://images.unsplash.com/photo-1556910103-1c02745a30bf?q=80&w=1000',
-    items: [], totalPrice: 18000000, location: '서울 송파구', leadTimeDays: 10, has3D: true, badges: ['오프닝 검수', '주방위주'], grade: 'B+', warranty: '6개월', tags: ['bakery', 'kitchen']
   },
 
   // --- [PUB] ---
@@ -237,14 +221,6 @@ export const MOCK_OPENING_PACKAGES: Package[] = [
     image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1000',
     items: [], totalPrice: 1500000, location: '서울 마포구', leadTimeDays: 7, has3D: false, badges: ['직거래', '소량'], grade: 'A', warranty: '없음', deadline: 'D-7', hopePrice: 1200000, tags: ['clothing', 'interior', 'today']
   },
-  {
-    id: 'pkg_retail_004', source: 'USER',
-    name: '꽃집 작업대 및 진열장',
-    description: '대형 원목 작업테이블(2000), 리본걸이, 화분 진열대.',
-    businessType: 'RETAIL',
-    image: 'https://images.unsplash.com/photo-1589244188104-81233c62a5a9?q=80&w=1000',
-    items: [], totalPrice: 800000, location: '서울 서초구', leadTimeDays: 3, has3D: false, badges: ['직거래', '가구위주'], grade: 'B', warranty: '없음', deadline: 'D-5', hopePrice: 700000, tags: ['flower', 'furniture']
-  },
 
   // --- [BEAUTY] ---
   {
@@ -262,14 +238,6 @@ export const MOCK_OPENING_PACKAGES: Package[] = [
     businessType: 'BEAUTY',
     image: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=1000',
     items: [], totalPrice: 5500000, location: '서울 강남구', leadTimeDays: 10, has3D: true, badges: ['오프닝 검수', '설치포함'], grade: 'A', warranty: '1년', tags: ['hair', 'premium', 'today']
-  },
-  {
-    id: 'pkg_beauty_003', source: 'USER',
-    name: '바버샵 클래식 체어 2대',
-    description: '앤티크 스타일 중량 바버 체어 2대. 가죽 상태 양호.',
-    businessType: 'BEAUTY',
-    image: 'https://images.unsplash.com/photo-1503951914205-9847627cb971?q=80&w=1000',
-    items: [], totalPrice: 2800000, location: '서울 용산구', leadTimeDays: 7, has3D: false, badges: ['직거래', '희귀템'], grade: 'B+', warranty: '없음', deadline: 'D-15', hopePrice: 2500000, tags: ['barber', 'vintage']
   },
 
   // --- [FITNESS] ---
@@ -300,30 +268,6 @@ export const MOCK_OPENING_PACKAGES: Package[] = [
     image: 'https://images.unsplash.com/photo-1527011046414-4781f1f94f8c?q=80&w=1000',
     items: [], totalPrice: 6500000, location: '서울 마포구', leadTimeDays: 7, has3D: false, badges: ['오프닝 검수', '설치지원'], grade: 'A', warranty: '6개월', tags: ['photo', 'studio']
   },
-  {
-    id: 'pkg_other_002', source: 'OPENING',
-    name: '코인노래방 15룸 패키지',
-    description: 'TJ미디어 최신 반주기 세트 15개. 소파 및 케이스 포함.',
-    businessType: 'ENTERTAINMENT',
-    image: 'https://images.unsplash.com/photo-1598518619679-584fbddb7f3d?q=80&w=1000',
-    items: [], totalPrice: 35000000, location: '경기 부천시', leadTimeDays: 20, has3D: true, badges: ['오프닝 검수', '대량'], grade: 'B+', warranty: '3개월', tags: ['karaoke', 'large']
-  },
-  {
-    id: 'pkg_chicken_001', source: 'OPENING',
-    name: '치킨·배달 주방 패키지 8~12평',
-    description: '작업대/선반/냉장/싱크 표준 구성. 튀김기 2구 포함.',
-    businessType: 'CHICKEN',
-    image: 'https://images.unsplash.com/photo-1583251633115-788a2b9e6eb1?q=80&w=800',
-    items: [], totalPrice: 27500000, location: '전국 설치 가능', leadTimeDays: 14, has3D: true, badges: ['오프닝 검수', '장비보증'], grade: 'B+', warranty: '30일', tags: ['chicken', 'kitchen', 'delivery']
-  },
-  {
-    id: 'pkg_chicken_002', source: 'USER',
-    name: '피자집 오븐 및 토핑냉장고 정리',
-    description: '컨베이어 피자오븐 1대, 토핑테이블 냉장고.',
-    businessType: 'CHICKEN',
-    image: 'https://images.unsplash.com/photo-1566843972233-03099975775a?q=80&w=800',
-    items: [], totalPrice: 4000000, location: '서울 동대문구', leadTimeDays: 7, has3D: false, badges: ['직거래', '주방위주'], grade: 'B', warranty: '없음', deadline: 'D-7', hopePrice: 3500000, tags: ['pizza', 'oven']
-  }
 ];
 
 // 3. 사용자 직거래 리스트 (홈 화면용 필터링 로직)

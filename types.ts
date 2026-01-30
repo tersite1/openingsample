@@ -259,7 +259,7 @@ export interface CategoryNode {
 }
 
 // Navigation Types
-export type MainTab = 'HOME' | 'LISTINGS' | 'FURNITURE' | 'QUOTE' | 'CONSULTING' | 'MORE' | 'FAQ' | 'CHECKLIST' | 'VENDORS' | 'SUPPORT' | 'DISTRICTS' | 'PROJECT' | 'ONBOARDING';
+export type MainTab = 'HOME' | 'LISTINGS' | 'FURNITURE' | 'QUOTE' | 'CONSULTING' | 'MORE' | 'FAQ' | 'CHECKLIST' | 'VENDORS' | 'SUPPORT' | 'DISTRICTS' | 'PROJECT' | 'ONBOARDING' | '3D_INTERIOR' | 'PROFILE';
 
 // 창업 프로젝트 상태
 export type ProjectStatus = 'DRAFT' | 'PM_ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';

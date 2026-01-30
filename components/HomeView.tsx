@@ -115,8 +115,26 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   // Filter Logic for User Listings
   const filteredListings = MOCK_USER_LISTINGS.filter(pkg => {
+    // Category filter
+    if (selectedMajor) {
+      const categoryMap: Record<string, string[]> = {
+        'FOOD': ['CAFE', 'PUB', 'CHICKEN', 'KOREAN'],
+        'RETAIL': ['CVS', 'CLOTHES', 'RETAIL'],
+        'BEAUTY': ['HAIR', 'NAIL', 'BEAUTY'],
+        'EDUCATION': ['STUDY', 'ACADEMY', 'EDUCATION'],
+        'HEALTH': ['FITNESS', 'PILATES'],
+        'ENTERTAINMENT': ['PC', 'KARAOKE', 'ENTERTAINMENT', 'OTHER'],
+        'OFFICE': ['OFFICE'],
+        'AUTO': ['AUTO'],
+        'LODGING': ['LODGING']
+      };
+      const allowedTypes = categoryMap[selectedMajor.id] || [];
+      if (!allowedTypes.includes(pkg.businessType)) return false;
+    }
+
+    // Tab filter
     const activeTabId = HOME_TABS.find(t => t.label === activeTab)?.id;
-    if (activeTabId && pkg.tags) {
+    if (activeTabId && activeTabId !== 'today' && pkg.tags) {
         if (!pkg.tags.includes(activeTabId)) return false;
     }
     return true;
@@ -282,8 +300,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     <span className="font-black text-xl text-slate-900 tracking-tight">오프닝</span>
                 </div>
                 
-                <div className="flex-1 max-w-md bg-slate-100/50 hover:bg-white h-10 rounded-full flex items-center px-4 text-slate-500 text-sm gap-2 cursor-pointer transition-all border border-transparent hover:border-brand-200 hover:shadow-sm group">
-                    <Search size={16} className="group-hover:text-brand-500 transition-colors" />
+                <div className="flex-1 min-w-0 mx-4 bg-slate-100/50 hover:bg-white h-10 rounded-full flex items-center px-4 text-slate-500 text-sm gap-2 cursor-pointer transition-all border border-transparent hover:border-brand-200 hover:shadow-sm group">
+                    <Search size={16} className="shrink-0 group-hover:text-brand-500 transition-colors" />
                     <span className="truncate group-hover:text-slate-700">업종, 지역, 예산 검색</span>
                 </div>
 

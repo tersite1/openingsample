@@ -33,6 +33,7 @@ import { SupportProgramsView } from './components/SupportProgramsView';
 import { GangnamDistrictsView } from './components/GangnamDistrictsView';
 import { OnboardingWizard } from './components/OnboardingWizard';
 import { ProjectDashboard } from './components/ProjectDashboard';
+import { ServiceJourneyView } from './components/ServiceJourneyView';
 import { Button, Input } from './components/Components';
 import { LoginView } from './components/LoginView';
 import { ArrowLeft, Grid, DoorOpen, X, Loader2, Plus } from 'lucide-react';
@@ -153,7 +154,7 @@ function App() {
 
   // 새 프로젝트 시작
   const handleStartNewProject = () => {
-    setShowOnboarding(true);
+    setCurrentTab('PROJECT');
   };
 
   // --- Actions ---
@@ -556,17 +557,9 @@ function App() {
                 <GangnamDistrictsView />
             )}
 
-            {currentTab === 'PROJECT' && activeProjectId && (
-                <ProjectDashboard
-                    projectId={activeProjectId}
+            {currentTab === 'PROJECT' && (
+                <ServiceJourneyView
                     onBack={() => setCurrentTab('HOME')}
-                />
-            )}
-
-            {currentTab === 'ONBOARDING' && (
-                <OnboardingWizard
-                    onComplete={handleOnboardingComplete}
-                    onSkip={() => setCurrentTab('HOME')}
                 />
             )}
         </div>
@@ -578,15 +571,6 @@ function App() {
 
       {appMode !== 'TAB_VIEW' && renderWizardContent()}
 
-      {/* 온보딩 모달 */}
-      {showOnboarding && (
-        <div className="fixed inset-0 z-50 bg-white animate-fade-in overflow-auto">
-          <OnboardingWizard
-            onComplete={handleOnboardingComplete}
-            onSkip={() => setShowOnboarding(false)}
-          />
-        </div>
-      )}
 
     </div>
   );
