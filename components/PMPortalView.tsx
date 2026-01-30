@@ -12,6 +12,13 @@ interface PMPortalViewProps {
   onLogout: () => void;
 }
 
+interface ChecklistItemData {
+  id: string;
+  title: string;
+  category: string;
+  status: 'done' | 'worry' | 'unchecked';
+}
+
 interface Project {
   id: string;
   business_category: string;
@@ -24,6 +31,28 @@ interface Project {
   pm_notes: string;
   created_at: string;
   user_id: string;
+  checklist_data: ChecklistItemData[];
+}
+
+interface Partner {
+  id: string;
+  name: string;
+  category: string;
+  subcategory: string;
+  contact_phone: string;
+  price_min: number;
+  price_max: number;
+  price_unit: string;
+}
+
+interface PartnerAssignment {
+  id: string;
+  project_id: string;
+  checklist_item_id: string;
+  partner_id: string;
+  partner?: Partner;
+  status: string;
+  pm_notes: string;
 }
 
 interface Message {
@@ -69,6 +98,10 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
   const [sending, setSending] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState<Partial<PMProfile>>({});
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [assignments, setAssignments] = useState<PartnerAssignment[]>([]);
+  const [showPartnerModal, setShowPartnerModal] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'chat' | 'checklist'>('checklist');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -78,9 +111,14 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
   useEffect(() => {
     if (selectedProject) {
       loadMessages(selectedProject.id);
+      loadAssignments(selectedProject.id);
       subscribeToMessages(selectedProject.id);
     }
   }, [selectedProject]);
+
+  useEffect(() => {
+    loadPartners();
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -128,6 +166,70 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
     if (data) {
       setMessages(data);
     }
+  };
+
+  const loadPartners = async () => {
+    const { data } = await supabase
+      .from('partners')
+      .select('*')
+      .eq('is_active', true);
+
+    if (data) {
+      setPartners(data);
+    }
+  };
+
+  const loadAssignments = async (projectId: string) => {
+    const { data } = await supabase
+      .from('project_partner_assignments')
+      .select('*, partner:partners(*)')
+      .eq('project_id', projectId);
+
+    if (data) {
+      setAssignments(data);
+    }
+  };
+
+  const assignPartner = async (checklistItemId: string, partnerId: string) => {
+    if (!selectedProject) return;
+
+    // 기존 배정 확인
+    const existing = assignments.find(a => a.checklist_item_id === checklistItemId);
+
+    if (existing) {
+      await supabase
+        .from('project_partner_assignments')
+        .update({ partner_id: partnerId, status: 'pending' })
+        .eq('id', existing.id);
+    } else {
+      await supabase
+        .from('project_partner_assignments')
+        .insert({
+          project_id: selectedProject.id,
+          checklist_item_id: checklistItemId,
+          partner_id: partnerId,
+          status: 'pending'
+        });
+    }
+
+    await loadAssignments(selectedProject.id);
+    setShowPartnerModal(null);
+
+    // 알림 메시지
+    const partner = partners.find(p => p.id === partnerId);
+    const item = selectedProject.checklist_data?.find(i => i.id === checklistItemId);
+    if (partner && item) {
+      await supabase.from('project_messages').insert({
+        project_id: selectedProject.id,
+        sender_type: 'PM',
+        message: `${item.title} 서비스에 "${partner.name}" 업체를 배정했습니다.\n예상 비용: ${partner.price_min}~${partner.price_max}${partner.price_unit}\n연락처: ${partner.contact_phone}`
+      });
+    }
+  };
+
+  const getPartnerForItem = (itemId: string) => {
+    const assignment = assignments.find(a => a.checklist_item_id === itemId);
+    return assignment?.partner;
   };
 
   const subscribeToMessages = (projectId: string) => {

@@ -378,6 +378,14 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
     const worryItems = checklist.filter(i => i.status === 'worry').map(i => i.title);
     const doneItems = checklist.filter(i => i.status === 'done').map(i => i.title);
 
+    // 체크리스트 데이터 준비
+    const checklistData = checklist.map(item => ({
+      id: item.id,
+      title: item.title,
+      category: item.category,
+      status: item.status
+    }));
+
     const { data: newProject } = await supabase
       .from('startup_projects')
       .insert([{
@@ -387,9 +395,10 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
         location_dong: dong,
         store_size: storeSize,
         estimated_total: (estimatedCosts.min + estimatedCosts.max) / 2,
-        current_step: 6,
+        current_step: 7,
         status: 'PM_ASSIGNED',
-        pm_id: pm?.id
+        pm_id: pm?.id,
+        checklist_data: checklistData
       }])
       .select()
       .single();
