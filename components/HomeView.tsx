@@ -278,7 +278,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             {/* Top Bar */}
             <div className="px-4 h-16 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2 shrink-0 cursor-pointer hover:opacity-80 transition-opacity" onClick={resetSelection}>
-                    <img src="/logo-blue.png" alt="오프닝" className="w-8 h-8 rounded-xl shadow-lg shadow-brand-500/30" />
+                    <img src="/favicon-new.png" alt="오프닝" className="w-9 h-9 rounded-xl shadow-lg shadow-brand-500/30" />
                     <span className="font-black text-xl text-slate-900 tracking-tight">오프닝</span>
                 </div>
                 
@@ -555,11 +555,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
                                 <div className="mt-auto">
                                     <div className="mb-3">
-                                        <span className="text-[10px] text-gray-400 block mb-0.5">희망가 (협의가능)</span>
+                                        <span className="text-[10px] text-gray-400 block mb-0.5">{pkg.hopePrice ? '희망가 (협의가능)' : ''}</span>
                                         <div className="flex items-baseline justify-between">
                                             <div className="flex items-baseline gap-1">
-                                                <span className="text-xl font-black text-slate-900">{pkg.hopePrice?.toLocaleString()}</span>
-                                                <span className="text-sm font-bold text-slate-900">원</span>
+                                                {pkg.hopePrice ? (
+                                                  <>
+                                                    <span className="text-xl font-black text-slate-900">{pkg.hopePrice.toLocaleString()}</span>
+                                                    <span className="text-sm font-bold text-slate-900">원</span>
+                                                  </>
+                                                ) : (
+                                                  <span className="text-lg font-bold text-brand-600">상담문의</span>
+                                                )}
                                             </div>
                                             {/* Compare Checkbox (Added) */}
                                             <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5">

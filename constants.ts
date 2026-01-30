@@ -204,14 +204,6 @@ export const MOCK_OPENING_PACKAGES: Package[] = [
     items: [], totalPrice: 3000000, location: '서울 관악구', leadTimeDays: 20, has3D: false, badges: ['직거래', '인테리어포함'], grade: 'B', warranty: '없음', deadline: 'D-14', hopePrice: 2500000, tags: ['izakaya', 'wood']
   },
   {
-    id: 'pkg_pub_003', source: 'USER',
-    name: '실내포차 원형테이블 15개 세트 급처',
-    description: '스텐 원형 드럼통 테이블 15개, 수납 의자 60개 일괄.',
-    businessType: 'PUB',
-    image: 'https://images.unsplash.com/photo-1572116469696-958721b7d6ca?q=80&w=1000',
-    items: [], totalPrice: 800000, location: '경기 수원시', leadTimeDays: 3, has3D: false, badges: ['직거래', '초저가'], grade: 'C', warranty: '없음', deadline: 'D-2', hopePrice: 500000, tags: ['pub', 'pocha', 'cheap', 'today']
-  },
-  {
     id: 'pkg_pub_004', source: 'USER',
     name: '와인바 럭셔리 소파 및 조명',
     description: '벨벳 소파 6조, 샹들리에 조명 3개, 와인잔 랙.',

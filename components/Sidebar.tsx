@@ -8,9 +8,10 @@ interface SidebarProps {
   className?: string;
   hasActiveProject?: boolean;
   onStartNewProject?: () => void;
+  onLogout?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, className = '', hasActiveProject, onStartNewProject }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, className = '', hasActiveProject, onStartNewProject, onLogout }) => {
   const tabs: { id: MainTab; label: string; icon: React.ReactNode }[] = [
     { id: 'HOME', label: '홈', icon: <Home size={20} /> },
     ...(hasActiveProject ? [{ id: 'PROJECT' as MainTab, label: '내 프로젝트', icon: <Rocket size={20} /> }] : []),
@@ -26,7 +27,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, class
       {/* Logo */}
       <div className="h-16 flex items-center px-6 border-b border-gray-100 mb-4">
         <div className="flex items-center gap-2">
-             <img src="/logo-blue.png" alt="오프닝" className="w-8 h-8" />
+             <img src="/favicon-new.png" alt="오프닝" className="w-9 h-9 rounded-xl" />
              <span className="font-black text-xl tracking-tight text-slate-900">오프닝</span>
         </div>
       </div>
@@ -68,11 +69,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, class
         })}
 
         <div className="mt-8 px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">Support</div>
-        <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+        <button
+          onClick={() => onTabChange('MORE')}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+        >
             <Settings size={20} className="text-gray-400" />
             설정
         </button>
-         <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+        <button
+          onClick={onLogout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-red-600 transition-colors"
+        >
             <LogOut size={20} className="text-gray-400" />
             로그아웃
         </button>

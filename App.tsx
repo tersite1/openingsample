@@ -479,6 +479,7 @@ function App() {
         className="hidden md:flex"
         hasActiveProject={hasActiveProject}
         onStartNewProject={handleStartNewProject}
+        onLogout={handleLogout}
       />
 
       <main className="flex-1 w-full relative h-screen overflow-y-auto no-scrollbar scroll-smooth">
