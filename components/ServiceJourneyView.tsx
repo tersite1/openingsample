@@ -62,6 +62,7 @@ interface ChecklistItem {
   estimatedCost: { min: number; max: number; unit: string };
   isRequired: boolean;
   status: 'done' | 'worry' | 'unchecked';
+  comment?: string; // 항목별 메모/코멘트
 }
 
 // 업종 카테고리
@@ -101,201 +102,193 @@ const STORE_SIZES = [
   { id: 'large', label: '대형 (25평 이상)', value: 30 },
 ];
 
-// 업종별 체크리스트 데이터 - 공통 + 업종별 특화 (21개 매장 운영자 체크리스트 기반)
+// 업종별 체크리스트 데이터 - 공통 + 업종별 특화 (중장년층 친화적 설명)
 const CHECKLIST_COMMON: Omit<ChecklistItem, 'status'>[] = [
-  // 1. 사전 준비
-  { id: 'concept', category: '사전 준비', title: '창업 컨셉 정리', description: '3W(Who, What, Why), 차별성 확보', icon: Lightbulb, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
-  { id: 'budget_plan', category: '사전 준비', title: '예산 계획', description: '창업비 50%, 나머지 50%는 버티기용', icon: Calculator, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
-  { id: 'market_research', category: '사전 준비', title: '시장 조사', description: '성공/망한 매장 분석, 경쟁업체 파악', icon: Target, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
-  // 2. 입지/계약
-  { id: 'location_search', category: '입지/계약', title: '상권 선정', description: '유동인구, 타겟 고객, 상권 특성', icon: Map, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
-  { id: 'real_estate', category: '입지/계약', title: '부동산 탐색', description: '공인중개사 비교, 매물 비교', icon: Building, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
-  { id: 'registry_check', category: '입지/계약', title: '등기부등본 확인', description: '집주인, 대출 여부, 권리관계', icon: FileText, estimatedCost: { min: 0, max: 2, unit: '만원' }, isRequired: true },
-  { id: 'facility_check', category: '입지/계약', title: '시설 점검', description: '전기 용량, 도시가스, 닥트, 수도/배수', icon: FileText, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
-  { id: 'contract', category: '입지/계약', title: '부동산 계약', description: '렌트프리 협상, 권리금 흥정 필수!', icon: FileText, estimatedCost: { min: 500, max: 5000, unit: '보증금 만원' }, isRequired: true },
+  // 입지/계약
+  { id: 'location_search', category: '입지/계약', title: '장소 선택', description: '사람들이 얼마나 다니는지, 내 손님이 될 사람들이 있는지 확인하세요', icon: Map, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
+  { id: 'real_estate', category: '입지/계약', title: '부동산 방문', description: '여러 부동산에서 비슷한 자리를 비교해보세요. 한 곳만 보지 마세요', icon: Building, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
+  { id: 'facility_check', category: '입지/계약', title: '건물 상태 점검', description: '전기 용량, 가스, 환기구(닥트), 상하수도가 영업에 적합한지 확인하세요', icon: FileText, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
+  { id: 'contract', category: '입지/계약', title: '임대차 계약', description: '월세 몇 개월 무료(렌트프리) 협상하세요. 권리금도 꼭 깎아보세요', icon: FileText, estimatedCost: { min: 500, max: 5000, unit: '보증금 만원' }, isRequired: true },
   // 시설/공사 (공통)
-  { id: 'demolition', category: '시설/공사', title: '철거 공사', description: '폐기물 처리 비용 포함 계약', icon: Hammer, estimatedCost: { min: 50, max: 150, unit: '평당 만원' }, isRequired: true },
-  { id: 'electric', category: '시설/공사', title: '전기/콘센트', description: '콘센트, 조명 여유있게 설계', icon: Lightbulb, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
-  { id: 'interior', category: '시설/공사', title: '인테리어 시공', description: '배관→전기→바닥→목작업→타일 순서', icon: PaintBucket, estimatedCost: { min: 150, max: 400, unit: '평당 만원' }, isRequired: true },
-  { id: 'signage', category: '시설/공사', title: '간판 설치', description: '외부 간판, 내부 사인물', icon: SignpostBig, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
-  { id: 'cleaning', category: '시설/공사', title: '준공 청소', description: '전문 청소 딥클리닝', icon: SparklesIcon, estimatedCost: { min: 20, max: 50, unit: '만원' }, isRequired: true },
+  { id: 'demolition', category: '시설/공사', title: '기존 시설 철거', description: '철거 비용에 쓰레기 처리비가 포함되는지 꼭 확인하세요', icon: Hammer, estimatedCost: { min: 50, max: 150, unit: '평당 만원' }, isRequired: true },
+  { id: 'electric', category: '시설/공사', title: '전기 공사', description: '콘센트와 조명 위치를 설계하고 넉넉하게 설치하세요', icon: Lightbulb, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
+  { id: 'interior', category: '시설/공사', title: '인테리어 공사', description: '배관→전기→바닥→벽→마감 순서로 진행. 동선 설계 포함', icon: PaintBucket, estimatedCost: { min: 150, max: 400, unit: '평당 만원' }, isRequired: true },
+  { id: 'signage', category: '시설/공사', title: '간판 제작·설치', description: '가게 이름 간판과 내부 안내판을 만들어 설치합니다', icon: SignpostBig, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
+  { id: 'cleaning', category: '시설/공사', title: '입주 청소', description: '공사 후 먼지 제거와 바닥 왁스 작업. 전문 청소업체에 맡기세요', icon: SparklesIcon, estimatedCost: { min: 20, max: 50, unit: '만원' }, isRequired: true },
   // 인허가 (공통)
-  { id: 'business_reg', category: '인허가/행정', title: '사업자등록증', description: '세무서 민원실, 영업신고증 필요', icon: FileText, estimatedCost: { min: 0, max: 0, unit: '무료' }, isRequired: true },
+  { id: 'business_reg', category: '인허가/행정', title: '사업자등록증 발급', description: '관할 세무서에서 발급받습니다. 신분증과 임대차계약서 지참하세요', icon: FileText, estimatedCost: { min: 0, max: 0, unit: '무료' }, isRequired: true },
   // 시스템 세팅 (공통)
-  { id: 'bank_account', category: '시스템 세팅', title: '사업자 통장', description: '사업자등록증 필요', icon: CreditCard, estimatedCost: { min: 0, max: 0, unit: '무료' }, isRequired: true },
-  { id: 'card_merchant', category: '시스템 세팅', title: '카드사 가맹', description: '카드 결제 가맹 계약', icon: CreditCard, estimatedCost: { min: 0, max: 0, unit: '무료' }, isRequired: true },
-  { id: 'pos_system', category: '시스템 세팅', title: 'POS/키오스크', description: '주문/결제 시스템', icon: Monitor, estimatedCost: { min: 50, max: 150, unit: '만원' }, isRequired: true },
-  { id: 'internet', category: '시스템 세팅', title: '인터넷/통신', description: '업소용 인터넷, 전화', icon: Wifi, estimatedCost: { min: 3, max: 5, unit: '월 만원' }, isRequired: true },
-  { id: 'cctv', category: '시스템 세팅', title: 'CCTV', description: '보안 카메라 설치', icon: Eye, estimatedCost: { min: 50, max: 150, unit: '만원' }, isRequired: true },
+  { id: 'bank_account', category: '시스템 세팅', title: '사업자 통장 개설', description: '은행에 사업자등록증 들고 가서 사업용 통장을 만드세요', icon: CreditCard, estimatedCost: { min: 0, max: 0, unit: '무료' }, isRequired: true },
+  { id: 'card_merchant', category: '시스템 세팅', title: '카드결제 신청', description: '카드사에 가맹점 신청을 하면 카드결제를 받을 수 있습니다', icon: CreditCard, estimatedCost: { min: 0, max: 0, unit: '무료' }, isRequired: true },
+  { id: 'pos_system', category: '시스템 세팅', title: '계산대(POS) 설치', description: '주문받고 결제하는 기계입니다. 무인키오스크도 고려해보세요', icon: Monitor, estimatedCost: { min: 50, max: 150, unit: '만원' }, isRequired: true },
+  { id: 'internet', category: '시스템 세팅', title: '인터넷·전화 개통', description: 'KT, SK, LG 중 선택. 카드결제와 배달앱에 필수입니다', icon: Wifi, estimatedCost: { min: 3, max: 5, unit: '월 만원' }, isRequired: true },
+  { id: 'cctv', category: '시스템 세팅', title: 'CCTV 설치', description: '보안과 분쟁 예방을 위해 4~8대 설치를 권장합니다', icon: Eye, estimatedCost: { min: 50, max: 150, unit: '만원' }, isRequired: true },
   // 인력/운영 (공통)
-  { id: 'operation_design', category: '인력/운영', title: '오퍼레이션 설계', description: '누가 어디서 무엇을 하는지', icon: Users, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
-  { id: 'insurance', category: '인력/운영', title: '보험 가입', description: '화재보험, 영업배상책임보험', icon: Shield, estimatedCost: { min: 30, max: 100, unit: '연 만원' }, isRequired: true },
+  { id: 'insurance', category: '인력/운영', title: '보험 가입', description: '화재보험과 손해배상보험은 필수입니다. 손님 다치면 큰일나요', icon: Shield, estimatedCost: { min: 30, max: 100, unit: '연 만원' }, isRequired: true },
   // 오픈/마케팅 (공통)
-  { id: 'sns_setup', category: '오픈/마케팅', title: 'SNS 세팅', description: '인스타그램, 네이버 플레이스 완벽 세팅', icon: Target, estimatedCost: { min: 0, max: 50, unit: '만원' }, isRequired: true },
-  { id: 'photo_shoot', category: '오픈/마케팅', title: '홍보 사진 촬영', description: '메뉴/매장 사진 촬영', icon: Store, estimatedCost: { min: 0, max: 100, unit: '만원' }, isRequired: false },
-  { id: 'soft_open', category: '오픈/마케팅', title: '소프트 오픈', description: '지인 초대 금지! 찐 손님으로 테스트', icon: Users, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
-  { id: 'grand_open', category: '오픈/마케팅', title: '그랜드 오픈', description: '인력 충분히 배치, 첫 손님 응대가 중요!', icon: Store, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
+  { id: 'photo_shoot', category: '오픈/마케팅', title: '홍보 사진 촬영', description: '메뉴와 가게 내부 사진을 예쁘게 찍어두세요. 온라인 홍보에 씁니다', icon: Store, estimatedCost: { min: 0, max: 100, unit: '만원' }, isRequired: false },
+  { id: 'grand_open', category: '오픈/마케팅', title: '정식 오픈', description: '직원을 충분히 배치하세요. 첫인상이 중요합니다', icon: Store, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
+  // PM 지원 항목 (PM이 도와드립니다)
+  { id: 'registry_check', category: 'PM 지원', title: '등기부등본 확인', description: '건물 주인 확인, 빚 여부 등을 PM이 함께 확인해드립니다', icon: FileText, estimatedCost: { min: 0, max: 2, unit: '만원' }, isRequired: false },
+  { id: 'operation_design', category: 'PM 지원', title: '업무 분담 설계', description: '누가 어떤 일을 맡을지 PM이 설계를 도와드립니다', icon: Users, estimatedCost: { min: 0, max: 0, unit: 'PM 지원' }, isRequired: false },
+  { id: 'manual', category: 'PM 지원', title: '운영 매뉴얼 작성', description: '직원 교육용 매뉴얼을 PM이 함께 만들어드립니다', icon: BookOpen, estimatedCost: { min: 0, max: 0, unit: 'PM 지원' }, isRequired: false },
+  { id: 'sns_setup', category: 'PM 지원', title: '온라인 마케팅 세팅', description: '네이버 지도, 인스타그램 등록을 PM이 도와드립니다', icon: Target, estimatedCost: { min: 0, max: 50, unit: 'PM 지원' }, isRequired: false },
 ];
 
 const CHECKLIST_BY_CATEGORY: Record<string, Omit<ChecklistItem, 'status'>[]> = {
-  // 음식점 (일반) - 21개 매장 운영자 체크리스트 기반
+  // 음식점 (일반) - 중장년층 친화적 설명
   restaurant: [
-    // 메뉴/컨셉
-    { id: 'menu_dev', category: '사전 준비', title: '메뉴 개발/확정', description: '원가율, 제조 난이도, 플레이팅, 비주얼', icon: Utensils, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
     // 인허가
-    { id: 'health_cert', category: '인허가/행정', title: '보건증 발급', description: '보건소 방문, 신분증 지참 (인테리어 전 완료!)', icon: Shield, estimatedCost: { min: 0, max: 3, unit: '만원' }, isRequired: true },
-    { id: 'hygiene_edu', category: '인허가/행정', title: '위생교육 이수', description: '한국외식업중앙회 (첫 창업은 오프라인 필수)', icon: GraduationCap, estimatedCost: { min: 2, max: 4, unit: '만원' }, isRequired: true },
-    { id: 'food_license', category: '인허가/행정', title: '영업신고증', description: '구청 위생과, 일반음식점 권장 (세금혜택)', icon: BookOpen, estimatedCost: { min: 0, max: 5, unit: '만원' }, isRequired: true },
+    { id: 'health_cert', category: '인허가/행정', title: '보건증 발급', description: '관할 보건소에서 받습니다. 신분증 들고 가세요. 결과까지 3일 걸립니다', icon: Shield, estimatedCost: { min: 0, max: 3, unit: '만원' }, isRequired: true },
+    { id: 'hygiene_edu', category: '인허가/행정', title: '위생교육 받기', description: '한국외식업중앙회에서 받습니다. 처음 창업이면 직접 출석해야 해요', icon: GraduationCap, estimatedCost: { min: 2, max: 4, unit: '만원' }, isRequired: true },
+    { id: 'food_license', category: '인허가/행정', title: '영업신고증 발급', description: '구청 위생과에서 받습니다. 일반음식점으로 신고하면 세금 혜택이 있어요', icon: BookOpen, estimatedCost: { min: 0, max: 5, unit: '만원' }, isRequired: true },
     // 시설/공사
-    { id: 'kitchen_layout', category: '시설/공사', title: '주방/홀 동선 설계', description: '주방부터, 콘센트 위치부터 정하기', icon: Map, estimatedCost: { min: 0, max: 50, unit: '만원' }, isRequired: true },
-    { id: 'plumbing', category: '시설/공사', title: '배관/배수 공사', description: '배수 빠뜨리면 바닥 다시 깐다! (필수 확인)', icon: Store, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
-    { id: 'gas_work', category: '시설/공사', title: '가스 배관 공사', description: '주방 집기 설치 후 가스공사 진행', icon: Flame, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
-    { id: 'ventilation', category: '시설/공사', title: '주방 환기/닥트', description: '닥트 배출 경로 (건물주와 협의 필수!)', icon: Wind, estimatedCost: { min: 200, max: 600, unit: '만원' }, isRequired: true },
+    { id: 'kitchen_layout', category: '시설/공사', title: '주방 배치 설계', description: '요리하는 순서대로 동선을 짜세요. 콘센트 위치도 미리 정해야 합니다', icon: Map, estimatedCost: { min: 0, max: 50, unit: '만원' }, isRequired: true },
+    { id: 'plumbing', category: '시설/공사', title: '상하수도 공사', description: '싱크대 위치에 맞춰 배관합니다. 나중에 바꾸면 바닥을 뜯어야 해요', icon: Store, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
+    { id: 'gas_work', category: '시설/공사', title: '가스 공사', description: '가스레인지, 튀김기 등 주방 장비 위치에 맞춰 가스 배관합니다', icon: Flame, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
+    { id: 'ventilation', category: '시설/공사', title: '환기 시설(후드) 설치', description: '요리 연기를 빼는 시설입니다. 건물주 허락을 먼저 받으세요', icon: Wind, estimatedCost: { min: 200, max: 600, unit: '만원' }, isRequired: true },
     // 장비
-    { id: 'kitchen_equip', category: '집기/장비', title: '주방 장비', description: '화구, 작업대, 싱크대 (AS 확실한 업체, 잠수주의)', icon: ChefHat, estimatedCost: { min: 500, max: 1500, unit: '만원' }, isRequired: true },
-    { id: 'refrigerator', category: '집기/장비', title: '업소용 냉장고', description: '냉장/냉동고 (중고 AS 확인)', icon: Refrigerator, estimatedCost: { min: 150, max: 400, unit: '만원' }, isRequired: true },
-    { id: 'furniture', category: '집기/장비', title: '테이블/의자', description: '테이블 수, 홀 동선 고려', icon: Armchair, estimatedCost: { min: 200, max: 600, unit: '만원' }, isRequired: true },
-    { id: 'tableware', category: '집기/장비', title: '식기/그릇', description: '접시, 수저, 컵 등 (미리 발주!)', icon: Utensils, estimatedCost: { min: 50, max: 200, unit: '만원' }, isRequired: true },
+    { id: 'kitchen_equip', category: '집기/장비', title: '주방 장비 구매', description: '가스레인지, 작업대, 싱크대. AS 잘 되는 업체에서 사세요', icon: ChefHat, estimatedCost: { min: 500, max: 1500, unit: '만원' }, isRequired: true },
+    { id: 'refrigerator', category: '집기/장비', title: '업소용 냉장고', description: '가정용보다 크고 튼튼합니다. 중고 구매 시 AS 가능한지 확인하세요', icon: Refrigerator, estimatedCost: { min: 150, max: 400, unit: '만원' }, isRequired: true },
+    { id: 'furniture', category: '집기/장비', title: '테이블과 의자', description: '손님 동선을 생각해서 배치하세요. 좌석 수에 따라 매출이 달라집니다', icon: Armchair, estimatedCost: { min: 200, max: 600, unit: '만원' }, isRequired: true },
+    { id: 'tableware', category: '집기/장비', title: '그릇과 수저', description: '접시, 수저, 컵 등입니다. 오픈 2주 전에 미리 주문하세요', icon: Utensils, estimatedCost: { min: 50, max: 200, unit: '만원' }, isRequired: true },
     // 운영
-    { id: 'supplier', category: '시스템 세팅', title: '식자재 도매처', description: '정기 배송 계약', icon: Truck, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
-    { id: 'beverage_supplier', category: '시스템 세팅', title: '음료/주류사 계약', description: '제빙기/냉장고 협상 필수!', icon: Beer, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
-    { id: 'hiring', category: '인력/운영', title: '직원 채용', description: '서빙, 주방, 설거지 파트별 책임 분배', icon: Users, estimatedCost: { min: 0, max: 0, unit: '인건비' }, isRequired: false },
-    { id: 'manual', category: '인력/운영', title: '운영 매뉴얼', description: '메뉴 매뉴얼 + 서비스 매뉴얼 준비', icon: BookOpen, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
-    { id: 'delivery_app', category: '오픈/마케팅', title: '배달앱 입점', description: '배민, 요기요, 쿠팡이츠', icon: Bike, estimatedCost: { min: 0, max: 50, unit: '만원' }, isRequired: false },
+    { id: 'supplier', category: '시스템 세팅', title: '식재료 납품업체', description: '야채, 고기 등을 정기 배송받을 업체를 정하세요', icon: Truck, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
+    { id: 'beverage_supplier', category: '시스템 세팅', title: '음료·주류 계약', description: '맥주, 소주 회사와 계약하면 냉장고나 제빙기를 무료로 받을 수 있어요', icon: Beer, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
+    { id: 'hiring', category: '인력/운영', title: '직원 구하기', description: '주방, 서빙, 설거지 담당을 정하세요. 최저임금 이상 지급해야 합니다', icon: Users, estimatedCost: { min: 0, max: 0, unit: '인건비' }, isRequired: false },
+    { id: 'manual', category: '인력/운영', title: '운영 방법 정리', description: '메뉴 만드는 법, 손님 응대법을 글로 정리해두세요', icon: BookOpen, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
+    { id: 'delivery_app', category: '오픈/마케팅', title: '배달앱 등록', description: '배달의민족, 요기요, 쿠팡이츠에 가게를 등록하세요', icon: Bike, estimatedCost: { min: 0, max: 50, unit: '만원' }, isRequired: false },
   ],
 
   // 치킨/분식 - 배달 특화
   chicken: [
-    { id: 'menu_dev', category: '사전 준비', title: '메뉴 개발/확정', description: '원가율, 제조 난이도, 배달 포장 고려', icon: Utensils, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
-    { id: 'health_cert', category: '인허가/행정', title: '보건증 발급', description: '보건소 방문 (인테리어 전 완료!)', icon: Shield, estimatedCost: { min: 0, max: 3, unit: '만원' }, isRequired: true },
-    { id: 'hygiene_edu', category: '인허가/행정', title: '위생교육 이수', description: '한국외식업중앙회', icon: GraduationCap, estimatedCost: { min: 2, max: 4, unit: '만원' }, isRequired: true },
-    { id: 'food_license', category: '인허가/행정', title: '영업신고증', description: '구청 위생과', icon: BookOpen, estimatedCost: { min: 0, max: 5, unit: '만원' }, isRequired: true },
-    { id: 'ventilation', category: '시설/공사', title: '주방 환기/후드', description: '튀김 연기 배출 필수! (치킨집 핵심)', icon: Wind, estimatedCost: { min: 300, max: 800, unit: '만원' }, isRequired: true },
-    { id: 'gas_work', category: '시설/공사', title: '가스 배관 공사', description: '업소용 가스 용량 증설', icon: Flame, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
-    { id: 'fryer', category: '집기/장비', title: '업소용 튀김기', description: '전기/가스 튀김기 2~3구', icon: ChefHat, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
-    { id: 'refrigerator', category: '집기/장비', title: '업소용 냉장/냉동고', description: '원재료 보관용 대용량', icon: Refrigerator, estimatedCost: { min: 150, max: 400, unit: '만원' }, isRequired: true },
-    { id: 'prep_table', category: '집기/장비', title: '작업대/싱크대', description: '스텐 작업대, 3조 싱크대', icon: Box, estimatedCost: { min: 100, max: 250, unit: '만원' }, isRequired: true },
-    { id: 'packaging', category: '집기/장비', title: '포장 용기/봉투', description: '치킨박스, 봉투, 소스용기 (미리 발주!)', icon: Package, estimatedCost: { min: 30, max: 100, unit: '만원' }, isRequired: true },
-    { id: 'supplier', category: '시스템 세팅', title: '원재료 공급처', description: '닭, 튀김가루, 소스 등 계약', icon: Truck, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
-    { id: 'delivery_app', category: '오픈/마케팅', title: '배달앱 입점', description: '배민, 쿠팡이츠, 요기요 (필수!)', icon: Bike, estimatedCost: { min: 0, max: 50, unit: '만원' }, isRequired: true },
-    { id: 'delivery_agency', category: '오픈/마케팅', title: '배달대행 계약', description: '배달권역 설정, 대행사 계약', icon: Truck, estimatedCost: { min: 0, max: 0, unit: '건당 과금' }, isRequired: true },
+    { id: 'health_cert', category: '인허가/행정', title: '보건증 발급', description: '보건소에서 받습니다. 인테리어 시작 전에 미리 받으세요', icon: Shield, estimatedCost: { min: 0, max: 3, unit: '만원' }, isRequired: true },
+    { id: 'hygiene_edu', category: '인허가/행정', title: '위생교육 받기', description: '한국외식업중앙회에서 교육받으세요', icon: GraduationCap, estimatedCost: { min: 2, max: 4, unit: '만원' }, isRequired: true },
+    { id: 'food_license', category: '인허가/행정', title: '영업신고증 발급', description: '구청 위생과에서 받습니다', icon: BookOpen, estimatedCost: { min: 0, max: 5, unit: '만원' }, isRequired: true },
+    { id: 'ventilation', category: '시설/공사', title: '환기 시설 설치', description: '튀김 연기가 많이 납니다. 강력한 환풍기가 필수예요', icon: Wind, estimatedCost: { min: 300, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'gas_work', category: '시설/공사', title: '가스 공사', description: '튀김기 사용량이 많아서 가스 용량을 늘려야 할 수 있어요', icon: Flame, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
+    { id: 'fryer', category: '집기/장비', title: '업소용 튀김기', description: '전기식 또는 가스식 튀김기 2~3구가 필요합니다', icon: ChefHat, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'refrigerator', category: '집기/장비', title: '대형 냉장·냉동고', description: '닭과 재료를 많이 보관해야 해서 큰 것이 필요합니다', icon: Refrigerator, estimatedCost: { min: 150, max: 400, unit: '만원' }, isRequired: true },
+    { id: 'prep_table', category: '집기/장비', title: '작업대와 싱크대', description: '스테인리스 작업대와 3칸 싱크대가 필요합니다', icon: Box, estimatedCost: { min: 100, max: 250, unit: '만원' }, isRequired: true },
+    { id: 'packaging', category: '집기/장비', title: '포장 용기', description: '치킨 박스, 봉투, 소스 용기. 오픈 2주 전에 주문하세요', icon: Package, estimatedCost: { min: 30, max: 100, unit: '만원' }, isRequired: true },
+    { id: 'supplier', category: '시스템 세팅', title: '재료 납품업체', description: '닭, 튀김가루, 양념 등을 공급받을 업체를 정하세요', icon: Truck, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
+    { id: 'delivery_app', category: '오픈/마케팅', title: '배달앱 등록', description: '배달의민족, 쿠팡이츠, 요기요 등록이 매출에 필수입니다', icon: Bike, estimatedCost: { min: 0, max: 50, unit: '만원' }, isRequired: true },
+    { id: 'delivery_agency', category: '오픈/마케팅', title: '배달대행 계약', description: '배달 기사를 직접 안 쓰려면 배달대행 업체와 계약하세요', icon: Truck, estimatedCost: { min: 0, max: 0, unit: '건당 과금' }, isRequired: true },
   ],
 
   // 카페
   cafe: [
-    { id: 'menu_dev', category: '사전 준비', title: '메뉴 개발/확정', description: '시그니처 음료, 디저트 구성', icon: Coffee, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
-    { id: 'health_cert', category: '인허가/행정', title: '보건증 발급', description: '보건소 방문', icon: Shield, estimatedCost: { min: 0, max: 3, unit: '만원' }, isRequired: true },
-    { id: 'hygiene_edu', category: '인허가/행정', title: '위생교육 이수', description: '한국외식업중앙회', icon: GraduationCap, estimatedCost: { min: 2, max: 4, unit: '만원' }, isRequired: true },
-    { id: 'food_license', category: '인허가/행정', title: '휴게음식점 영업신고', description: '구청 위생과', icon: BookOpen, estimatedCost: { min: 0, max: 5, unit: '만원' }, isRequired: true },
-    { id: 'espresso_machine', category: '집기/장비', title: '에스프레소 머신', description: '2그룹 이상 (중고 AS 확인)', icon: Coffee, estimatedCost: { min: 500, max: 3000, unit: '만원' }, isRequired: true },
-    { id: 'grinder', category: '집기/장비', title: '커피 그라인더', description: '온디맨드 그라인더', icon: Coffee, estimatedCost: { min: 100, max: 500, unit: '만원' }, isRequired: true },
-    { id: 'refrigerator', category: '집기/장비', title: '냉장고/제빙기', description: '쇼케이스, 제빙기', icon: Refrigerator, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
-    { id: 'furniture', category: '집기/장비', title: '테이블/의자', description: '카페 감성 홀 가구', icon: Armchair, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
-    { id: 'coffee_supplier', category: '시스템 세팅', title: '원두 거래처', description: '로스터리 계약, 원두 선정', icon: Coffee, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
-    { id: 'barista_training', category: '인력/운영', title: '바리스타 교육', description: '커피 추출 교육', icon: GraduationCap, estimatedCost: { min: 50, max: 200, unit: '만원' }, isRequired: false },
+    { id: 'health_cert', category: '인허가/행정', title: '보건증 발급', description: '관할 보건소에서 받습니다. 신분증 지참하세요', icon: Shield, estimatedCost: { min: 0, max: 3, unit: '만원' }, isRequired: true },
+    { id: 'hygiene_edu', category: '인허가/행정', title: '위생교육 받기', description: '한국외식업중앙회에서 교육받으세요', icon: GraduationCap, estimatedCost: { min: 2, max: 4, unit: '만원' }, isRequired: true },
+    { id: 'food_license', category: '인허가/행정', title: '휴게음식점 신고', description: '구청 위생과에서 휴게음식점으로 신고합니다', icon: BookOpen, estimatedCost: { min: 0, max: 5, unit: '만원' }, isRequired: true },
+    { id: 'espresso_machine', category: '집기/장비', title: '커피머신', description: '에스프레소 머신이 필요합니다. 중고 구매 시 AS 확인하세요', icon: Coffee, estimatedCost: { min: 500, max: 3000, unit: '만원' }, isRequired: true },
+    { id: 'grinder', category: '집기/장비', title: '원두 분쇄기', description: '커피 원두를 가는 기계입니다. 주문마다 갈아야 맛있어요', icon: Coffee, estimatedCost: { min: 100, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'refrigerator', category: '집기/장비', title: '쇼케이스·제빙기', description: '케이크 진열장과 얼음 만드는 기계가 필요합니다', icon: Refrigerator, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'furniture', category: '집기/장비', title: '테이블과 의자', description: '카페 분위기에 맞는 가구를 고르세요', icon: Armchair, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'coffee_supplier', category: '시스템 세팅', title: '원두 납품업체', description: '좋은 원두를 정기적으로 배송받을 업체를 정하세요', icon: Coffee, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
+    { id: 'barista_training', category: '인력/운영', title: '커피 만드는 법 배우기', description: '커피 추출 교육을 받으면 맛이 달라집니다', icon: GraduationCap, estimatedCost: { min: 50, max: 200, unit: '만원' }, isRequired: false },
   ],
 
   // 주점/바
   pub: [
-    { id: 'menu_dev', category: '사전 준비', title: '메뉴 개발/확정', description: '안주 메뉴, 주류 구성', icon: Beer, estimatedCost: { min: 0, max: 0, unit: '직접' }, isRequired: true },
-    { id: 'health_cert', category: '인허가/행정', title: '보건증 발급', description: '보건소 방문', icon: Shield, estimatedCost: { min: 0, max: 3, unit: '만원' }, isRequired: true },
-    { id: 'hygiene_edu', category: '인허가/행정', title: '위생교육 이수', description: '한국외식업중앙회', icon: GraduationCap, estimatedCost: { min: 2, max: 4, unit: '만원' }, isRequired: true },
-    { id: 'food_license', category: '인허가/행정', title: '일반음식점 영업신고', description: '주류 판매 위해 일반음식점 필수!', icon: BookOpen, estimatedCost: { min: 0, max: 5, unit: '만원' }, isRequired: true },
-    { id: 'ventilation', category: '시설/공사', title: '환기 시스템', description: '주방 환기, 홀 공조', icon: Wind, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
-    { id: 'refrigerator', category: '집기/장비', title: '냉장고/제빙기', description: '음료 냉장고, 제빙기', icon: Refrigerator, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
-    { id: 'furniture', category: '집기/장비', title: '테이블/의자/바', description: '홀 가구, 바 테이블', icon: Armchair, estimatedCost: { min: 300, max: 1000, unit: '만원' }, isRequired: true },
-    { id: 'kitchen_equip', category: '집기/장비', title: '간단 주방 장비', description: '안주 조리용 장비', icon: ChefHat, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
-    { id: 'liquor_supplier', category: '시스템 세팅', title: '주류사 계약', description: '맥주, 소주, 양주 (제빙기/냉장고 협상 필수!)', icon: Beer, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
-    { id: 'hiring', category: '인력/운영', title: '직원 채용', description: '서빙, 바텐더', icon: Users, estimatedCost: { min: 0, max: 0, unit: '인건비' }, isRequired: false },
+    { id: 'health_cert', category: '인허가/행정', title: '보건증 발급', description: '관할 보건소에서 받습니다', icon: Shield, estimatedCost: { min: 0, max: 3, unit: '만원' }, isRequired: true },
+    { id: 'hygiene_edu', category: '인허가/행정', title: '위생교육 받기', description: '한국외식업중앙회에서 교육받으세요', icon: GraduationCap, estimatedCost: { min: 2, max: 4, unit: '만원' }, isRequired: true },
+    { id: 'food_license', category: '인허가/행정', title: '일반음식점 신고', description: '술을 팔려면 반드시 일반음식점으로 신고해야 합니다', icon: BookOpen, estimatedCost: { min: 0, max: 5, unit: '만원' }, isRequired: true },
+    { id: 'ventilation', category: '시설/공사', title: '환기 시설', description: '담배 연기와 냄새를 빼는 환기 시설이 필요합니다', icon: Wind, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'refrigerator', category: '집기/장비', title: '냉장고·제빙기', description: '음료를 시원하게 보관하고 얼음을 만드는 기계입니다', icon: Refrigerator, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'furniture', category: '집기/장비', title: '테이블과 의자', description: '홀 가구와 바 테이블을 준비하세요', icon: Armchair, estimatedCost: { min: 300, max: 1000, unit: '만원' }, isRequired: true },
+    { id: 'kitchen_equip', category: '집기/장비', title: '간단한 주방 장비', description: '안주를 만들 수 있는 간단한 조리 장비입니다', icon: ChefHat, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'liquor_supplier', category: '시스템 세팅', title: '주류 회사 계약', description: '맥주, 소주 회사와 계약하면 냉장고나 제빙기를 무료로 받아요', icon: Beer, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
+    { id: 'hiring', category: '인력/운영', title: '직원 구하기', description: '서빙 직원이 필요합니다', icon: Users, estimatedCost: { min: 0, max: 0, unit: '인건비' }, isRequired: false },
   ],
 
   // 소매/편의점
   retail: [
-    { id: 'retail_license', category: '인허가/행정', title: '소매업 신고', description: '업종별 신고/등록', icon: BookOpen, estimatedCost: { min: 0, max: 10, unit: '만원' }, isRequired: true },
-    { id: 'display_shelf', category: '장비', title: '진열대/선반', description: '곤돌라, 벽면 선반', icon: Box, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
-    { id: 'showcase', category: '장비', title: '쇼케이스/냉장고', description: '음료 냉장고, 아이스크림 냉동고', icon: Refrigerator, estimatedCost: { min: 300, max: 1000, unit: '만원' }, isRequired: true },
-    { id: 'counter', category: '장비', title: '카운터/계산대', description: '계산대, 담배 진열대', icon: Store, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
-    { id: 'inventory_system', category: '운영 준비', title: '재고관리 시스템', description: '바코드, 재고 관리', icon: Monitor, estimatedCost: { min: 50, max: 200, unit: '만원' }, isRequired: true },
-    { id: 'supplier', category: '운영 준비', title: '도매처 계약', description: '상품 공급 계약', icon: Truck, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
+    { id: 'retail_license', category: '인허가/행정', title: '소매업 신고', description: '파는 물건에 따라 구청에 신고가 필요할 수 있습니다', icon: BookOpen, estimatedCost: { min: 0, max: 10, unit: '만원' }, isRequired: true },
+    { id: 'display_shelf', category: '집기/장비', title: '진열대', description: '상품을 놓는 선반입니다. 벽면 선반과 가운데 진열대가 필요해요', icon: Box, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'showcase', category: '집기/장비', title: '냉장 진열장', description: '음료나 아이스크림을 보관하는 냉장고입니다', icon: Refrigerator, estimatedCost: { min: 300, max: 1000, unit: '만원' }, isRequired: true },
+    { id: 'counter', category: '집기/장비', title: '계산대', description: '손님이 계산하는 곳입니다. 담배 판매 시 담배 진열대도 필요해요', icon: Store, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
+    { id: 'inventory_system', category: '시스템 세팅', title: '재고 관리', description: '바코드로 물건을 관리하는 시스템입니다. POS와 연동됩니다', icon: Monitor, estimatedCost: { min: 50, max: 200, unit: '만원' }, isRequired: true },
+    { id: 'supplier', category: '시스템 세팅', title: '물건 납품업체', description: '팔 물건을 정기적으로 배송받을 도매상을 정하세요', icon: Truck, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
   ],
 
   // 미용/뷰티
   beauty: [
-    { id: 'beauty_license', category: '인허가/행정', title: '미용사 면허', description: '국가자격증 확인', icon: BookOpen, estimatedCost: { min: 0, max: 0, unit: '자격증' }, isRequired: true },
-    { id: 'beauty_permit', category: '인허가/행정', title: '미용업 신고', description: '구청 위생과 신고', icon: FileText, estimatedCost: { min: 0, max: 5, unit: '만원' }, isRequired: true },
-    { id: 'plumbing', category: '시설/공사', title: '샴푸대 배관', description: '샴푸대 위치, 배수 설계', icon: Store, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
-    { id: 'beauty_chair', category: '장비', title: '미용 의자/경대', description: '시술 의자, 거울, 경대', icon: Armchair, estimatedCost: { min: 300, max: 800, unit: '만원' }, isRequired: true },
-    { id: 'shampoo_unit', category: '장비', title: '샴푸대', description: '샴푸 유닛, 배수 연결', icon: Store, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
-    { id: 'beauty_tools', category: '장비', title: '미용 기기/도구', description: '드라이어, 고데기, 염색 도구', icon: Scissors, estimatedCost: { min: 100, max: 400, unit: '만원' }, isRequired: true },
-    { id: 'beauty_supplier', category: '운영 준비', title: '미용 재료 거래처', description: '염색약, 펌약, 소모품', icon: Truck, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
+    { id: 'beauty_license', category: '인허가/행정', title: '미용사 자격증', description: '미용사(일반) 국가자격증이 있어야 영업할 수 있습니다', icon: BookOpen, estimatedCost: { min: 0, max: 0, unit: '자격증' }, isRequired: true },
+    { id: 'beauty_permit', category: '인허가/행정', title: '미용업 신고', description: '구청 위생과에 미용업 신고를 합니다', icon: FileText, estimatedCost: { min: 0, max: 5, unit: '만원' }, isRequired: true },
+    { id: 'plumbing', category: '시설/공사', title: '샴푸대 배관 공사', description: '머리 감는 샴푸대 위치에 수도와 배수 시설을 설치합니다', icon: Store, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
+    { id: 'beauty_chair', category: '집기/장비', title: '미용 의자와 거울', description: '손님이 앉는 의자와 큰 거울이 필요합니다', icon: Armchair, estimatedCost: { min: 300, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'shampoo_unit', category: '집기/장비', title: '샴푸대', description: '머리 감는 전용 의자와 세면대입니다', icon: Store, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
+    { id: 'beauty_tools', category: '집기/장비', title: '미용 도구', description: '드라이기, 고데기, 염색 도구 등입니다', icon: Scissors, estimatedCost: { min: 100, max: 400, unit: '만원' }, isRequired: true },
+    { id: 'beauty_supplier', category: '시스템 세팅', title: '미용 재료 업체', description: '염색약, 펌약 등을 공급받을 업체를 정하세요', icon: Truck, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
   ],
 
   // 헬스/운동
   fitness: [
-    { id: 'sports_permit', category: '인허가/행정', title: '체육시설업 신고', description: '구청 체육과 신고', icon: BookOpen, estimatedCost: { min: 0, max: 10, unit: '만원' }, isRequired: true },
-    { id: 'shower_room', category: '시설/공사', title: '샤워실/탈의실', description: '샤워부스, 락커, 배관', icon: Store, estimatedCost: { min: 300, max: 800, unit: '만원' }, isRequired: true },
-    { id: 'gym_equip', category: '장비', title: '운동 기구', description: '유산소, 웨이트 기구', icon: Dumbbell, estimatedCost: { min: 1000, max: 5000, unit: '만원' }, isRequired: true },
-    { id: 'locker', category: '장비', title: '락커/수납', description: '개인 락커, 수건 보관', icon: Box, estimatedCost: { min: 100, max: 400, unit: '만원' }, isRequired: true },
-    { id: 'flooring', category: '시설/공사', title: '바닥 시공', description: '운동용 특수 바닥재', icon: PaintBucket, estimatedCost: { min: 200, max: 600, unit: '만원' }, isRequired: true },
-    { id: 'trainer_hire', category: '운영 준비', title: '트레이너 채용', description: 'PT 트레이너, 자격 확인', icon: Users, estimatedCost: { min: 0, max: 0, unit: '인건비' }, isRequired: false },
+    { id: 'sports_permit', category: '인허가/행정', title: '체육시설업 신고', description: '구청 체육과에 신고합니다. 시설 기준을 맞춰야 해요', icon: BookOpen, estimatedCost: { min: 0, max: 10, unit: '만원' }, isRequired: true },
+    { id: 'shower_room', category: '시설/공사', title: '샤워실·탈의실', description: '샤워부스와 옷 갈아입는 공간을 만들어야 합니다', icon: Store, estimatedCost: { min: 300, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'gym_equip', category: '집기/장비', title: '운동 기구', description: '러닝머신, 자전거, 역기 등 운동 기구입니다', icon: Dumbbell, estimatedCost: { min: 1000, max: 5000, unit: '만원' }, isRequired: true },
+    { id: 'locker', category: '집기/장비', title: '개인 사물함', description: '회원들이 짐을 보관하는 락커입니다', icon: Box, estimatedCost: { min: 100, max: 400, unit: '만원' }, isRequired: true },
+    { id: 'flooring', category: '시설/공사', title: '운동장 바닥', description: '기구 무게를 버티고 소음을 줄이는 특수 바닥재입니다', icon: PaintBucket, estimatedCost: { min: 200, max: 600, unit: '만원' }, isRequired: true },
+    { id: 'trainer_hire', category: '인력/운영', title: '트레이너 채용', description: '운동 가르치는 트레이너. 자격증 있는 분을 뽑으세요', icon: Users, estimatedCost: { min: 0, max: 0, unit: '인건비' }, isRequired: false },
   ],
 
   // 교육/학원
   education: [
-    { id: 'academy_reg', category: '인허가/행정', title: '학원 등록', description: '교육청 학원 등록', icon: BookOpen, estimatedCost: { min: 0, max: 20, unit: '만원' }, isRequired: true },
-    { id: 'desk_chair', category: '장비', title: '책상/의자', description: '학생용 책걸상', icon: Armchair, estimatedCost: { min: 200, max: 600, unit: '만원' }, isRequired: true },
-    { id: 'whiteboard', category: '장비', title: '칠판/화이트보드', description: '강의용 보드, 스크린', icon: Box, estimatedCost: { min: 50, max: 200, unit: '만원' }, isRequired: true },
-    { id: 'edu_material', category: '장비', title: '교재/교구', description: '학습 교재, 교육 도구', icon: BookOpen, estimatedCost: { min: 100, max: 500, unit: '만원' }, isRequired: true },
-    { id: 'teacher_hire', category: '운영 준비', title: '강사 채용', description: '과목별 강사 채용', icon: Users, estimatedCost: { min: 0, max: 0, unit: '인건비' }, isRequired: true },
-    { id: 'student_recruit', category: '운영 준비', title: '수강생 모집', description: '홍보, 상담, 등록', icon: Target, estimatedCost: { min: 50, max: 300, unit: '만원' }, isRequired: true },
+    { id: 'academy_reg', category: '인허가/행정', title: '학원 등록', description: '교육청에 학원으로 등록해야 합니다. 시설 기준을 맞춰야 해요', icon: BookOpen, estimatedCost: { min: 0, max: 20, unit: '만원' }, isRequired: true },
+    { id: 'desk_chair', category: '집기/장비', title: '책상과 의자', description: '학생들이 앉아서 공부할 책상과 의자입니다', icon: Armchair, estimatedCost: { min: 200, max: 600, unit: '만원' }, isRequired: true },
+    { id: 'whiteboard', category: '집기/장비', title: '칠판', description: '가르칠 때 쓰는 칠판이나 화이트보드입니다', icon: Box, estimatedCost: { min: 50, max: 200, unit: '만원' }, isRequired: true },
+    { id: 'edu_material', category: '집기/장비', title: '교재와 학습 도구', description: '가르칠 때 쓰는 책과 교육 자료입니다', icon: BookOpen, estimatedCost: { min: 100, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'teacher_hire', category: '인력/운영', title: '선생님 채용', description: '가르칠 강사를 뽑으세요. 과목별로 필요합니다', icon: Users, estimatedCost: { min: 0, max: 0, unit: '인건비' }, isRequired: true },
+    { id: 'student_recruit', category: '오픈/마케팅', title: '학생 모집', description: '전단지, 인터넷 광고로 학생을 모집하세요', icon: Target, estimatedCost: { min: 50, max: 300, unit: '만원' }, isRequired: true },
   ],
 
   // 사무실
   office: [
-    { id: 'office_furniture', category: '장비', title: '사무용 가구', description: '책상, 의자, 수납장', icon: Armchair, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
-    { id: 'meeting_room', category: '장비', title: '회의실 세팅', description: '회의 테이블, 프로젝터', icon: Users, estimatedCost: { min: 100, max: 400, unit: '만원' }, isRequired: false },
-    { id: 'network', category: '운영 준비', title: '네트워크/전화', description: '인터넷, 전화 설치', icon: Wifi, estimatedCost: { min: 30, max: 100, unit: '만원' }, isRequired: true },
+    { id: 'office_furniture', category: '집기/장비', title: '사무용 가구', description: '책상, 의자, 서류함 등 사무실 가구입니다', icon: Armchair, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'meeting_room', category: '집기/장비', title: '회의실 가구', description: '회의용 테이블과 빔프로젝터입니다', icon: Users, estimatedCost: { min: 100, max: 400, unit: '만원' }, isRequired: false },
+    { id: 'network', category: '시스템 세팅', title: '인터넷·전화', description: '사무실에서 쓸 인터넷과 전화를 설치하세요', icon: Wifi, estimatedCost: { min: 30, max: 100, unit: '만원' }, isRequired: true },
   ],
 
   // PC방
   pcroom: [
-    { id: 'game_biz_reg', category: '인허가/행정', title: '게임제공업 등록', description: '구청 문화체육과 (영업시간 제한 확인)', icon: BookOpen, estimatedCost: { min: 0, max: 10, unit: '만원' }, isRequired: true },
-    { id: 'youth_protect', category: '인허가/행정', title: '청소년 보호 교육', description: '청소년보호 책임자 교육 이수', icon: Shield, estimatedCost: { min: 2, max: 5, unit: '만원' }, isRequired: true },
-    { id: 'fire_safety', category: '인허가/행정', title: '소방시설 완비증명', description: '소방서 발급 (50석 이상 필수)', icon: Shield, estimatedCost: { min: 0, max: 50, unit: '만원' }, isRequired: true },
-    { id: 'electric_upgrade', category: '시설/공사', title: '전기 증설', description: 'PC 대수에 따른 용량 증설 (필수!)', icon: Lightbulb, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
-    { id: 'network_infra', category: '시설/공사', title: '네트워크 구축', description: '기가 인터넷, LAN 배선, 스위칭 허브', icon: Wifi, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
-    { id: 'aircon', category: '시설/공사', title: '에어컨/환기', description: 'PC 발열 대비 냉방/환기 필수', icon: Wind, estimatedCost: { min: 300, max: 800, unit: '만원' }, isRequired: true },
-    { id: 'pc_setup', category: '장비', title: 'PC/모니터', description: '게이밍 PC, 144Hz 모니터 (50대 기준)', icon: Monitor, estimatedCost: { min: 5000, max: 10000, unit: '만원' }, isRequired: true },
-    { id: 'gaming_chair', category: '장비', title: '게이밍 체어/책상', description: '인체공학 의자, PC방 전용 책상', icon: Armchair, estimatedCost: { min: 500, max: 1500, unit: '만원' }, isRequired: true },
-    { id: 'peripherals', category: '장비', title: '키보드/마우스/헤드셋', description: '게이밍 기어 (파손 대비 여분 필수)', icon: Box, estimatedCost: { min: 300, max: 800, unit: '만원' }, isRequired: true },
-    { id: 'game_license', category: '시스템 세팅', title: '게임 라이선스', description: 'PC방 전용 게임 라이선스 계약', icon: FileText, estimatedCost: { min: 50, max: 150, unit: '월 만원' }, isRequired: true },
-    { id: 'pcroom_system', category: '시스템 세팅', title: 'PC방 관리 프로그램', description: '사이버플러스/아이카페 등 관리솔루션', icon: Monitor, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
-    { id: 'food_corner', category: '부가 서비스', title: '스낵코너/음료', description: '자판기, 라면기, 음료 냉장고', icon: Coffee, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: false },
+    { id: 'game_biz_reg', category: '인허가/행정', title: '게임제공업 등록', description: '구청 문화체육과에 등록합니다. 심야 영업 제한이 있어요', icon: BookOpen, estimatedCost: { min: 0, max: 10, unit: '만원' }, isRequired: true },
+    { id: 'youth_protect', category: '인허가/행정', title: '청소년보호 교육', description: '미성년자 출입 관리를 위한 교육을 받아야 합니다', icon: Shield, estimatedCost: { min: 2, max: 5, unit: '만원' }, isRequired: true },
+    { id: 'fire_safety', category: '인허가/행정', title: '소방시설 점검', description: '50석 이상이면 소방서에서 확인을 받아야 합니다', icon: Shield, estimatedCost: { min: 0, max: 50, unit: '만원' }, isRequired: true },
+    { id: 'electric_upgrade', category: '시설/공사', title: '전기 용량 증설', description: '컴퓨터를 많이 쓰려면 전기 용량을 늘려야 합니다', icon: Lightbulb, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'network_infra', category: '시설/공사', title: '인터넷 배선', description: '빠른 인터넷과 컴퓨터 연결선을 설치합니다', icon: Wifi, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'aircon', category: '시설/공사', title: '냉방·환기 시설', description: '컴퓨터 열기를 식히는 에어컨과 환기 시설이 필수입니다', icon: Wind, estimatedCost: { min: 300, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'pc_setup', category: '집기/장비', title: '컴퓨터와 모니터', description: '게임용 고성능 컴퓨터입니다. 50대 기준 가격이에요', icon: Monitor, estimatedCost: { min: 5000, max: 10000, unit: '만원' }, isRequired: true },
+    { id: 'gaming_chair', category: '집기/장비', title: '의자와 책상', description: '오래 앉아도 편한 게이밍 의자와 PC방 전용 책상입니다', icon: Armchair, estimatedCost: { min: 500, max: 1500, unit: '만원' }, isRequired: true },
+    { id: 'peripherals', category: '집기/장비', title: '키보드·마우스·헤드셋', description: '자주 고장나니 여분을 꼭 준비하세요', icon: Box, estimatedCost: { min: 300, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'game_license', category: '시스템 세팅', title: '게임 라이선스', description: 'PC방에서 게임을 돌리려면 매달 사용료를 내야 해요', icon: FileText, estimatedCost: { min: 50, max: 150, unit: '월 만원' }, isRequired: true },
+    { id: 'pcroom_system', category: '시스템 세팅', title: 'PC방 관리 프로그램', description: '좌석 관리와 요금 계산하는 프로그램입니다', icon: Monitor, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
+    { id: 'food_corner', category: '오픈/마케팅', title: '간식 코너', description: '라면, 음료, 과자를 파는 코너입니다. 추가 수입이 됩니다', icon: Coffee, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: false },
   ],
 
   // 호텔/숙박시설
   hotel: [
-    { id: 'hotel_biz_reg', category: '인허가/행정', title: '숙박업 등록', description: '구청 관광과/위생과 (등급별 기준 상이)', icon: BookOpen, estimatedCost: { min: 10, max: 50, unit: '만원' }, isRequired: true },
-    { id: 'fire_safety', category: '인허가/행정', title: '소방안전 검사', description: '소방시설 완비, 피난안내도 설치', icon: Shield, estimatedCost: { min: 100, max: 500, unit: '만원' }, isRequired: true },
-    { id: 'building_permit', category: '인허가/행정', title: '건축물 용도 변경', description: '숙박시설 용도 확인/변경', icon: Building, estimatedCost: { min: 0, max: 500, unit: '만원' }, isRequired: true },
-    { id: 'hygiene_check', category: '인허가/행정', title: '위생점검 준비', description: '객실별 욕실, 환기, 채광 기준', icon: Shield, estimatedCost: { min: 0, max: 0, unit: '점검' }, isRequired: true },
-    { id: 'room_interior', category: '시설/공사', title: '객실 인테리어', description: '객실 내부 인테리어, 방음', icon: PaintBucket, estimatedCost: { min: 200, max: 500, unit: '객실당 만원' }, isRequired: true },
-    { id: 'bathroom', category: '시설/공사', title: '욕실 시공', description: '객실별 샤워시설, 배관', icon: Store, estimatedCost: { min: 150, max: 400, unit: '객실당 만원' }, isRequired: true },
-    { id: 'room_furniture', category: '장비', title: '객실 가구', description: '침대, 옷장, TV, 테이블', icon: Armchair, estimatedCost: { min: 100, max: 300, unit: '객실당 만원' }, isRequired: true },
-    { id: 'bedding', category: '장비', title: '침구류', description: '이불, 베개, 시트 (교체용 여분)', icon: Box, estimatedCost: { min: 30, max: 100, unit: '객실당 만원' }, isRequired: true },
-    { id: 'amenities', category: '장비', title: '어메니티', description: '샴푸, 칫솔, 타월, 슬리퍼', icon: Package, estimatedCost: { min: 5, max: 20, unit: '객실당 만원' }, isRequired: true },
-    { id: 'front_system', category: '시스템 세팅', title: '프론트 시스템', description: '객실관리, 예약관리 PMS', icon: Monitor, estimatedCost: { min: 100, max: 500, unit: '만원' }, isRequired: true },
-    { id: 'door_lock', category: '시스템 세팅', title: '객실 도어락', description: '카드키/번호 도어락', icon: Shield, estimatedCost: { min: 20, max: 50, unit: '객실당 만원' }, isRequired: true },
-    { id: 'ota_register', category: '오픈/마케팅', title: 'OTA 입점', description: '야놀자, 여기어때, 부킹닷컴 등록', icon: Target, estimatedCost: { min: 0, max: 0, unit: '수수료' }, isRequired: true },
-    { id: 'cleaning_staff', category: '인력/운영', title: '청소/하우스키핑', description: '객실 청소 인력/업체 계약', icon: Users, estimatedCost: { min: 0, max: 0, unit: '인건비' }, isRequired: true },
-    { id: 'laundry', category: '인력/운영', title: '린넨 세탁 계약', description: '침구, 타월 세탁 업체', icon: Truck, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
+    { id: 'hotel_biz_reg', category: '인허가/행정', title: '숙박업 등록', description: '구청 관광과나 위생과에 등록합니다. 시설 기준이 까다로워요', icon: BookOpen, estimatedCost: { min: 10, max: 50, unit: '만원' }, isRequired: true },
+    { id: 'fire_safety', category: '인허가/행정', title: '소방 검사', description: '소방시설과 비상구 안내판이 필요합니다', icon: Shield, estimatedCost: { min: 100, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'building_permit', category: '인허가/행정', title: '건물 용도 확인', description: '건물이 숙박업에 적합한지 확인하고, 필요하면 용도 변경합니다', icon: Building, estimatedCost: { min: 0, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'hygiene_check', category: '인허가/행정', title: '위생 기준 점검', description: '객실마다 욕실, 환기, 채광이 기준에 맞아야 합니다', icon: Shield, estimatedCost: { min: 0, max: 0, unit: '점검' }, isRequired: true },
+    { id: 'room_interior', category: '시설/공사', title: '객실 인테리어', description: '방 내부를 꾸미고 방음 처리를 합니다', icon: PaintBucket, estimatedCost: { min: 200, max: 500, unit: '객실당 만원' }, isRequired: true },
+    { id: 'bathroom', category: '시설/공사', title: '욕실 공사', description: '객실마다 샤워시설을 설치합니다', icon: Store, estimatedCost: { min: 150, max: 400, unit: '객실당 만원' }, isRequired: true },
+    { id: 'room_furniture', category: '집기/장비', title: '객실 가구', description: '침대, 옷장, TV, 테이블 등입니다', icon: Armchair, estimatedCost: { min: 100, max: 300, unit: '객실당 만원' }, isRequired: true },
+    { id: 'bedding', category: '집기/장비', title: '이불과 베개', description: '손님용 침구입니다. 교체용 여분도 필요해요', icon: Box, estimatedCost: { min: 30, max: 100, unit: '객실당 만원' }, isRequired: true },
+    { id: 'amenities', category: '집기/장비', title: '욕실 용품', description: '샴푸, 칫솔, 수건, 슬리퍼 등 손님용 물품입니다', icon: Package, estimatedCost: { min: 5, max: 20, unit: '객실당 만원' }, isRequired: true },
+    { id: 'front_system', category: '시스템 세팅', title: '예약 관리 시스템', description: '객실 예약과 체크인을 관리하는 프로그램입니다', icon: Monitor, estimatedCost: { min: 100, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'door_lock', category: '시스템 세팅', title: '객실 잠금장치', description: '카드키나 비밀번호로 여는 도어락입니다', icon: Shield, estimatedCost: { min: 20, max: 50, unit: '객실당 만원' }, isRequired: true },
+    { id: 'ota_register', category: '오픈/마케팅', title: '예약 사이트 등록', description: '야놀자, 여기어때, 부킹닷컴에 등록하면 손님이 찾아와요', icon: Target, estimatedCost: { min: 0, max: 0, unit: '수수료' }, isRequired: true },
+    { id: 'cleaning_staff', category: '인력/운영', title: '청소 직원', description: '객실 청소하는 직원이나 청소 업체가 필요합니다', icon: Users, estimatedCost: { min: 0, max: 0, unit: '인건비' }, isRequired: true },
+    { id: 'laundry', category: '인력/운영', title: '세탁 업체 계약', description: '이불과 수건을 세탁해줄 업체를 정하세요', icon: Truck, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
   ],
 
   // 기타 (default)
   etc: [
-    { id: 'license', category: '인허가/행정', title: '업종별 인허가', description: '업종에 맞는 인허가', icon: BookOpen, estimatedCost: { min: 0, max: 20, unit: '만원' }, isRequired: true },
-    { id: 'equipment', category: '장비', title: '업종별 장비', description: '필수 장비/집기', icon: Box, estimatedCost: { min: 500, max: 2000, unit: '만원' }, isRequired: true },
-    { id: 'furniture', category: '장비', title: '가구/집기', description: '테이블, 의자 등', icon: Armchair, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'license', category: '인허가/행정', title: '인허가 확인', description: '하려는 사업에 필요한 허가나 신고가 있는지 확인하세요', icon: BookOpen, estimatedCost: { min: 0, max: 20, unit: '만원' }, isRequired: true },
+    { id: 'equipment', category: '집기/장비', title: '필요한 장비', description: '사업에 필요한 장비를 준비하세요', icon: Box, estimatedCost: { min: 500, max: 2000, unit: '만원' }, isRequired: true },
+    { id: 'furniture', category: '집기/장비', title: '가구 구매', description: '테이블, 의자 등 필요한 가구입니다', icon: Armchair, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
   ],
 };
 
@@ -1611,58 +1604,83 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
           <div className="space-y-4">
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-sm text-yellow-800">
               <p className="font-bold mb-1">💡 현재 상황을 체크해주세요</p>
-              <p className="text-yellow-700">이미 해결된 항목은 ✓, 걱정되는 항목은 ⚠️ 를 눌러주세요</p>
+              <p className="text-yellow-700">이미 준비됨 ✓ / 도움 필요 ⚠️ / 메모 버튼을 눌러 상세 내용을 남겨주세요</p>
             </div>
 
-            {['사전 준비', '입지/계약', '인허가/행정', '시설/공사', '집기/장비', '시스템 세팅', '인력/운영', '오픈/마케팅'].map(category => (
-              <div key={category} className="bg-white rounded-xl border overflow-hidden">
-                <div className="bg-gray-50 px-4 py-2 border-b">
-                  <h3 className="font-bold text-sm text-gray-700">{category}</h3>
+            {['입지/계약', '인허가/행정', '시설/공사', '집기/장비', '시스템 세팅', '인력/운영', '오픈/마케팅', 'PM 지원'].map(category => {
+              const categoryItems = checklist.filter(item => item.category === category);
+              if (categoryItems.length === 0) return null;
+
+              return (
+                <div key={category} className="bg-white rounded-xl border overflow-hidden">
+                  <div className={`px-4 py-2 border-b ${category === 'PM 지원' ? 'bg-brand-50' : 'bg-gray-50'}`}>
+                    <h3 className={`font-bold text-sm ${category === 'PM 지원' ? 'text-brand-700' : 'text-gray-700'}`}>
+                      {category === 'PM 지원' ? '🎯 PM이 도와드리는 항목' : category}
+                    </h3>
+                  </div>
+                  <div className="divide-y">
+                    {categoryItems.map(item => {
+                      const Icon = item.icon;
+                      return (
+                        <div key={item.id} className="p-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                              item.status === 'done' ? 'bg-green-100 text-green-600' :
+                              item.status === 'worry' ? 'bg-orange-100 text-orange-600' :
+                              'bg-gray-100 text-gray-500'
+                            }`}>
+                              <Icon size={20} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-sm text-gray-900">{item.title}</p>
+                              <p className="text-xs text-gray-500">{item.description}</p>
+                            </div>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => toggleChecklistItem(item.id, item.status === 'done' ? 'unchecked' : 'done')}
+                                className={`w-9 h-9 rounded-lg flex items-center justify-center border-2 transition-all ${
+                                  item.status === 'done'
+                                    ? 'bg-green-500 border-green-500 text-white'
+                                    : 'border-gray-200 text-gray-400 hover:border-green-300'
+                                }`}
+                                title="이미 준비됨"
+                              >
+                                <Check size={18} />
+                              </button>
+                              <button
+                                onClick={() => toggleChecklistItem(item.id, item.status === 'worry' ? 'unchecked' : 'worry')}
+                                className={`w-9 h-9 rounded-lg flex items-center justify-center border-2 transition-all ${
+                                  item.status === 'worry'
+                                    ? 'bg-orange-500 border-orange-500 text-white'
+                                    : 'border-gray-200 text-gray-400 hover:border-orange-300'
+                                }`}
+                                title="도움이 필요해요"
+                              >
+                                <AlertTriangle size={18} />
+                              </button>
+                            </div>
+                          </div>
+                          {/* 코멘트 입력 영역 */}
+                          <div className="mt-2 ml-13">
+                            <input
+                              type="text"
+                              placeholder="메모를 남겨주세요 (예: 견적 3곳 받아둠)"
+                              className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-400"
+                              value={item.comment || ''}
+                              onChange={(e) => {
+                                setChecklist(prev => prev.map(i =>
+                                  i.id === item.id ? { ...i, comment: e.target.value } : i
+                                ));
+                              }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="divide-y">
-                  {checklist.filter(item => item.category === category).map(item => {
-                    const Icon = item.icon;
-                    return (
-                      <div key={item.id} className="p-3 flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                          item.status === 'done' ? 'bg-green-100 text-green-600' :
-                          item.status === 'worry' ? 'bg-orange-100 text-orange-600' :
-                          'bg-gray-100 text-gray-500'
-                        }`}>
-                          <Icon size={20} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm text-gray-900">{item.title}</p>
-                          <p className="text-xs text-gray-500">{item.description}</p>
-                        </div>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => toggleChecklistItem(item.id, item.status === 'done' ? 'unchecked' : 'done')}
-                            className={`w-9 h-9 rounded-lg flex items-center justify-center border-2 transition-all ${
-                              item.status === 'done'
-                                ? 'bg-green-500 border-green-500 text-white'
-                                : 'border-gray-200 text-gray-400 hover:border-green-300'
-                            }`}
-                          >
-                            <Check size={18} />
-                          </button>
-                          <button
-                            onClick={() => toggleChecklistItem(item.id, item.status === 'worry' ? 'unchecked' : 'worry')}
-                            className={`w-9 h-9 rounded-lg flex items-center justify-center border-2 transition-all ${
-                              item.status === 'worry'
-                                ? 'bg-orange-500 border-orange-500 text-white'
-                                : 'border-gray-200 text-gray-400 hover:border-orange-300'
-                            }`}
-                          >
-                            <AlertTriangle size={18} />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -1709,6 +1727,51 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
                     </div>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* 체크리스트 요약 표 */}
+            <div className="bg-white rounded-xl border overflow-hidden">
+              <div className="bg-gray-50 px-4 py-3 border-b">
+                <h3 className="font-bold text-sm text-gray-700">📋 준비 현황 요약</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-4 py-2 text-left font-bold text-gray-600">항목</th>
+                      <th className="px-3 py-2 text-center font-bold text-gray-600 w-20">상태</th>
+                      <th className="px-4 py-2 text-left font-bold text-gray-600">메모</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {checklist.filter(i => i.status !== 'unchecked' || i.comment).map(item => (
+                      <tr key={item.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-2 text-gray-900">{item.title}</td>
+                        <td className="px-3 py-2 text-center">
+                          {item.status === 'done' ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">✓ 준비됨</span>
+                          ) : item.status === 'worry' ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700">⚠️ 도움필요</span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 text-gray-600 text-xs">{item.comment || '-'}</td>
+                      </tr>
+                    ))}
+                    {checklist.filter(i => i.status !== 'unchecked' || i.comment).length === 0 && (
+                      <tr>
+                        <td colSpan={3} className="px-4 py-6 text-center text-gray-400">
+                          체크하거나 메모를 남긴 항목이 없습니다
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <div className="px-4 py-2 bg-gray-50 border-t text-xs text-gray-500">
+                총 {checklist.filter(i => i.status === 'done').length}개 준비 완료 / {checklist.filter(i => i.status === 'worry').length}개 도움 필요 / {checklist.filter(i => i.status === 'unchecked').length}개 미체크
               </div>
             </div>
 

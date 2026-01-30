@@ -148,6 +148,7 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
     category: 'PLANNING',
     description: '',
   });
+  const [showMobileSidebar, setShowMobileSidebar] = useState(true); // 모바일: 사이드바/메인 토글
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -609,9 +610,9 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className="min-h-[100dvh] bg-gray-100 flex flex-col md:flex-row">
       {/* 사이드바 - 프로필 & 프로젝트 목록 */}
-      <aside className="w-80 bg-white border-r flex flex-col">
+      <aside className={`w-full md:w-80 bg-white border-r flex flex-col ${selectedProject && !showMobileSidebar ? 'hidden md:flex' : 'flex'}`}>
         {/* PM 프로필 */}
         <div className="p-4 border-b">
           <div className="flex items-center gap-3 mb-4">
@@ -702,7 +703,10 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
                 return (
                   <button
                     key={project.id}
-                    onClick={() => setSelectedProject(project)}
+                    onClick={() => {
+                      setSelectedProject(project);
+                      setShowMobileSidebar(false); // 모바일에서 프로젝트 선택 시 메인으로 전환
+                    }}
                     className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
                       selectedProject?.id === project.id ? 'bg-brand-50 border-l-4 border-brand-600' : ''
                     }`}
@@ -747,14 +751,21 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
       </aside>
 
       {/* 메인 - 프로젝트 상세 */}
-      <main className="flex-1 flex flex-col">
+      <main className={`flex-1 flex flex-col min-h-0 ${showMobileSidebar ? 'hidden md:flex' : 'flex'}`}>
         {selectedProject ? (
           <>
             {/* 프로젝트 헤더 */}
-            <div className="bg-white border-b px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-xl font-bold">
+            <div className="bg-white border-b px-4 md:px-6 py-4">
+              <div className="flex items-center justify-between gap-2">
+                {/* 모바일 뒤로가기 버튼 */}
+                <button
+                  onClick={() => setShowMobileSidebar(true)}
+                  className="md:hidden p-2 -ml-2 text-gray-600 hover:text-gray-900"
+                >
+                  <ChevronRight size={20} className="rotate-180" />
+                </button>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-lg md:text-xl font-bold truncate">
                     {selectedProject.business_category} 창업 프로젝트
                   </h1>
                   <p className="text-sm text-gray-500">
