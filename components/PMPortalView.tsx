@@ -638,6 +638,65 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
                 </div>
               </div>
 
+              {/* 고객 상담 조건 요약 */}
+              <div className="mt-4 p-4 bg-slate-50 rounded-xl">
+                <div className="flex items-center gap-2 mb-3">
+                  <User size={16} className="text-brand-600" />
+                  <span className="font-bold text-sm">고객 상담 조건</span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-400 text-xs mb-1">고객명</p>
+                    <p className="font-bold">{selectedProject.user_name || '미입력'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-xs mb-1">연락처</p>
+                    <p className="font-bold">{selectedProject.user_phone || '미입력'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-xs mb-1">업종</p>
+                    <p className="font-bold">{selectedProject.business_category}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-xs mb-1">위치/평수</p>
+                    <p className="font-bold">강남구 {selectedProject.location_dong} · {selectedProject.store_size}평</p>
+                  </div>
+                </div>
+
+                {/* 체크리스트 현황 */}
+                <div className="mt-4 pt-3 border-t border-slate-200">
+                  <p className="text-xs text-gray-400 mb-2">체크리스트 현황</p>
+                  <div className="flex gap-3 flex-wrap">
+                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold">
+                      ✓ 준비됨 {selectedProject.checklist_data?.filter(i => i.status === 'done').length || 0}건
+                    </span>
+                    <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-bold">
+                      ⚠ 도움 필요 {selectedProject.checklist_data?.filter(i => i.status === 'worry').length || 0}건
+                    </span>
+                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-bold">
+                      미확인 {selectedProject.checklist_data?.filter(i => i.status === 'unchecked').length || 0}건
+                    </span>
+                  </div>
+                </div>
+
+                {/* 도움 필요 항목 */}
+                {selectedProject.checklist_data?.filter(i => i.status === 'worry').length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-slate-200">
+                    <p className="text-xs text-orange-600 font-bold mb-2">⚠ 고객이 도움 요청한 항목</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedProject.checklist_data
+                        .filter(i => i.status === 'worry')
+                        .map(item => (
+                          <span key={item.id} className="px-2 py-1 bg-orange-50 text-orange-700 rounded text-xs">
+                            {item.title}
+                          </span>
+                        ))
+                      }
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* 탭 */}
               <div className="mt-4 flex gap-2">
                 <button

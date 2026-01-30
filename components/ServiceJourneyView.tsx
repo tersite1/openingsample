@@ -11,7 +11,8 @@ import {
   BookOpen, Box, Hammer, PaintBucket, SignpostBig, SparklesIcon,
   Check, X, AlertTriangle, HelpCircle, ChevronDown, ChevronUp,
   Wind, Flame, ChefHat, Package, Monitor, Truck, Refrigerator, Armchair,
-  Users, TrendingDown, Navigation, MapPinned, CircleDollarSign, Eye
+  Users, TrendingDown, Navigation, MapPinned, CircleDollarSign, Eye,
+  Briefcase, MoreHorizontal
 } from 'lucide-react';
 
 interface ServiceJourneyViewProps {
@@ -66,13 +67,15 @@ interface ChecklistItem {
 // 업종 카테고리
 const BUSINESS_CATEGORIES = [
   { id: 'cafe', label: '카페/디저트', icon: Coffee, color: 'bg-amber-100 text-amber-700' },
-  { id: 'korean', label: '한식', icon: Utensils, color: 'bg-orange-100 text-orange-700' },
+  { id: 'restaurant', label: '음식점', icon: Utensils, color: 'bg-orange-100 text-orange-700' },
   { id: 'chicken', label: '치킨/분식', icon: Utensils, color: 'bg-red-100 text-red-700' },
   { id: 'pub', label: '주점/바', icon: Beer, color: 'bg-purple-100 text-purple-700' },
   { id: 'retail', label: '소매/편의점', icon: ShoppingBag, color: 'bg-blue-100 text-blue-700' },
   { id: 'beauty', label: '미용/뷰티', icon: Scissors, color: 'bg-pink-100 text-pink-700' },
   { id: 'fitness', label: '헬스/운동', icon: Dumbbell, color: 'bg-green-100 text-green-700' },
   { id: 'education', label: '교육/학원', icon: GraduationCap, color: 'bg-indigo-100 text-indigo-700' },
+  { id: 'office', label: '사무실', icon: Briefcase, color: 'bg-slate-100 text-slate-700' },
+  { id: 'etc', label: '기타', icon: MoreHorizontal, color: 'bg-gray-100 text-gray-700' },
 ];
 
 // 강남구 동 목록 (주요 랜드마크 포함)
