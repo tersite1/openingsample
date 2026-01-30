@@ -99,73 +99,141 @@ const STORE_SIZES = [
   { id: 'large', label: '대형 (25평 이상)', value: 30 },
 ];
 
-// 업종별 체크리스트 데이터
+// 업종별 체크리스트 데이터 - 공통 + 업종별 특화
+const CHECKLIST_COMMON: Omit<ChecklistItem, 'status'>[] = [
+  // 공통 - 인허가/행정
+  { id: 'business_registration', category: '인허가/행정', title: '사업자등록', description: '세무서 사업자등록 신청', icon: FileText, estimatedCost: { min: 0, max: 0, unit: '무료' }, isRequired: true },
+  // 공통 - 시설/공사
+  { id: 'demolition', category: '시설/공사', title: '철거 및 원상복구', description: '기존 시설 철거, 폐기물 처리', icon: Hammer, estimatedCost: { min: 50, max: 150, unit: '평당 만원' }, isRequired: true },
+  { id: 'interior', category: '시설/공사', title: '인테리어 시공', description: '업종별 맞춤 인테리어', icon: PaintBucket, estimatedCost: { min: 150, max: 400, unit: '평당 만원' }, isRequired: true },
+  { id: 'electric', category: '시설/공사', title: '전기/콘센트 공사', description: '콘센트, 조명 설계', icon: Lightbulb, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
+  { id: 'signage', category: '시설/공사', title: '간판/사인물', description: '외부 간판, 내부 사인물', icon: SignpostBig, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
+  // 공통 - 운영 준비
+  { id: 'pos_system', category: '운영 준비', title: 'POS/결제 시스템', description: '포스기, 카드단말기', icon: Monitor, estimatedCost: { min: 50, max: 150, unit: '만원' }, isRequired: true },
+  { id: 'cctv_internet', category: '운영 준비', title: 'CCTV/인터넷', description: '매장 보안, 통신', icon: Wifi, estimatedCost: { min: 50, max: 150, unit: '만원' }, isRequired: true },
+  { id: 'insurance', category: '운영 준비', title: '필수 보험', description: '화재/배상책임 보험', icon: Shield, estimatedCost: { min: 30, max: 100, unit: '연 만원' }, isRequired: true },
+];
+
 const CHECKLIST_BY_CATEGORY: Record<string, Omit<ChecklistItem, 'status'>[]> = {
-  // 치킨/분식 전용
+  // 음식점 (일반)
+  restaurant: [
+    { id: 'food_license', category: '인허가/행정', title: '영업신고증', description: '구청 위생과 일반음식점 신고', icon: BookOpen, estimatedCost: { min: 0, max: 5, unit: '만원' }, isRequired: true },
+    { id: 'health_cert', category: '인허가/행정', title: '보건증 발급', description: '보건소 방문, 신분증 지참', icon: Shield, estimatedCost: { min: 0, max: 3, unit: '만원' }, isRequired: true },
+    { id: 'hygiene_edu', category: '인허가/행정', title: '위생교육 이수', description: '한국외식업중앙회 위생교육', icon: GraduationCap, estimatedCost: { min: 2, max: 4, unit: '만원' }, isRequired: true },
+    { id: 'ventilation', category: '시설/공사', title: '주방 환기/후드', description: '주방 연기 배출 시스템', icon: Wind, estimatedCost: { min: 200, max: 600, unit: '만원' }, isRequired: true },
+    { id: 'plumbing', category: '시설/공사', title: '배관/배수 공사', description: '주방 수도, 배수 설비', icon: Store, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
+    { id: 'gas_work', category: '시설/공사', title: '가스 배관 공사', description: '업소용 가스 설비', icon: Flame, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
+    { id: 'kitchen_equip', category: '주방 장비', title: '주방 장비', description: '화구, 작업대, 싱크대 등', icon: ChefHat, estimatedCost: { min: 500, max: 1500, unit: '만원' }, isRequired: true },
+    { id: 'refrigerator', category: '주방 장비', title: '업소용 냉장고', description: '냉장/냉동고', icon: Refrigerator, estimatedCost: { min: 150, max: 400, unit: '만원' }, isRequired: true },
+    { id: 'furniture', category: '장비', title: '테이블/의자', description: '홀 가구 배치', icon: Armchair, estimatedCost: { min: 200, max: 600, unit: '만원' }, isRequired: true },
+    { id: 'tableware', category: '장비', title: '식기/그릇', description: '접시, 수저, 컵 등', icon: Utensils, estimatedCost: { min: 50, max: 200, unit: '만원' }, isRequired: true },
+    { id: 'supplier', category: '운영 준비', title: '식자재 공급처', description: '도매처 계약', icon: Truck, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
+    { id: 'delivery_app', category: '운영 준비', title: '배달앱 입점', description: '배민, 요기요, 쿠팡이츠', icon: Bike, estimatedCost: { min: 0, max: 50, unit: '만원' }, isRequired: false },
+  ],
+
+  // 치킨/분식
   chicken: [
-    // 인허가/행정
-    { id: 'business_registration', category: '인허가/행정', title: '사업자등록', description: '세무서 사업자등록 신청', icon: FileText, estimatedCost: { min: 0, max: 0, unit: '무료' }, isRequired: true },
     { id: 'food_license', category: '인허가/행정', title: '음식점 영업신고', description: '구청 위생과 영업신고', icon: BookOpen, estimatedCost: { min: 0, max: 5, unit: '만원' }, isRequired: true },
-    { id: 'hygiene_edu', category: '인허가/행정', title: '위생교육 이수', description: '한국외식업중앙회 위생교육 (3시간)', icon: GraduationCap, estimatedCost: { min: 2, max: 4, unit: '만원' }, isRequired: true },
-
-    // 시설/공사
-    { id: 'demolition', category: '시설/공사', title: '철거 및 원상복구', description: '기존 시설 철거, 폐기물 처리', icon: Hammer, estimatedCost: { min: 50, max: 150, unit: '평당 만원' }, isRequired: true },
-    { id: 'interior', category: '시설/공사', title: '인테리어 시공', description: '주방/홀 인테리어, 타일, 조명', icon: PaintBucket, estimatedCost: { min: 150, max: 350, unit: '평당 만원' }, isRequired: true },
-    { id: 'ventilation', category: '시설/공사', title: '주방 환기/후드 시스템', description: '튀김 연기 배출 필수 (치킨집 핵심)', icon: Wind, estimatedCost: { min: 300, max: 800, unit: '만원' }, isRequired: true },
-    { id: 'signage', category: '시설/공사', title: '간판/사인물', description: '외부 간판, 메뉴판, 가격표', icon: SignpostBig, estimatedCost: { min: 200, max: 600, unit: '만원' }, isRequired: true },
+    { id: 'health_cert', category: '인허가/행정', title: '보건증 발급', description: '보건소 방문', icon: Shield, estimatedCost: { min: 0, max: 3, unit: '만원' }, isRequired: true },
+    { id: 'hygiene_edu', category: '인허가/행정', title: '위생교육 이수', description: '한국외식업중앙회 위생교육', icon: GraduationCap, estimatedCost: { min: 2, max: 4, unit: '만원' }, isRequired: true },
+    { id: 'ventilation', category: '시설/공사', title: '주방 환기/후드', description: '튀김 연기 배출 필수!', icon: Wind, estimatedCost: { min: 300, max: 800, unit: '만원' }, isRequired: true },
     { id: 'gas_work', category: '시설/공사', title: '가스 배관 공사', description: '업소용 가스 용량 증설', icon: Flame, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
-
-    // 주방 장비
     { id: 'fryer', category: '주방 장비', title: '업소용 튀김기', description: '전기/가스 튀김기 2~3구', icon: ChefHat, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
     { id: 'refrigerator', category: '주방 장비', title: '업소용 냉장/냉동고', description: '원재료 보관용 대용량', icon: Refrigerator, estimatedCost: { min: 150, max: 400, unit: '만원' }, isRequired: true },
     { id: 'prep_table', category: '주방 장비', title: '작업대/싱크대', description: '스텐 작업대, 3조 싱크대', icon: Box, estimatedCost: { min: 100, max: 250, unit: '만원' }, isRequired: true },
-    { id: 'packaging', category: '주방 장비', title: '포장 용기/봉투', description: '치킨박스, 봉투, 소스용기 등', icon: Package, estimatedCost: { min: 30, max: 100, unit: '만원 (초도물량)' }, isRequired: true },
-
-    // 운영 준비
-    { id: 'pos_system', category: '운영 준비', title: 'POS/주문 시스템', description: '포스기, 주문접수 태블릿', icon: Monitor, estimatedCost: { min: 50, max: 150, unit: '만원' }, isRequired: true },
-    { id: 'delivery_app', category: '운영 준비', title: '배달앱 입점', description: '배민, 쿠팡이츠, 요기요 등록', icon: Bike, estimatedCost: { min: 0, max: 50, unit: '만원 (광고비 별도)' }, isRequired: true },
+    { id: 'packaging', category: '주방 장비', title: '포장 용기/봉투', description: '치킨박스, 봉투, 소스용기', icon: Package, estimatedCost: { min: 30, max: 100, unit: '만원' }, isRequired: true },
+    { id: 'delivery_app', category: '운영 준비', title: '배달앱 입점', description: '배민, 쿠팡이츠, 요기요', icon: Bike, estimatedCost: { min: 0, max: 50, unit: '만원' }, isRequired: true },
     { id: 'delivery_agency', category: '운영 준비', title: '배달대행 계약', description: '배달권역 설정, 대행사 계약', icon: Truck, estimatedCost: { min: 0, max: 0, unit: '건당 과금' }, isRequired: true },
-    { id: 'supplier', category: '운영 준비', title: '원재료 공급처', description: '닭, 튀김가루, 소스 등 계약', icon: Store, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
-    { id: 'cctv_internet', category: '운영 준비', title: 'CCTV/인터넷', description: '매장 보안, 배달앱 연동용', icon: Wifi, estimatedCost: { min: 50, max: 150, unit: '만원' }, isRequired: true },
-    { id: 'insurance', category: '운영 준비', title: '영업배상책임보험', description: '음식점 필수 가입', icon: Shield, estimatedCost: { min: 20, max: 50, unit: '연 만원' }, isRequired: true },
+    { id: 'supplier', category: '운영 준비', title: '원재료 공급처', description: '닭, 튀김가루, 소스 등', icon: Store, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
   ],
 
-  // 카페 전용
+  // 카페
   cafe: [
-    { id: 'business_registration', category: '인허가/행정', title: '사업자등록', description: '세무서 사업자등록 신청', icon: FileText, estimatedCost: { min: 0, max: 0, unit: '무료' }, isRequired: true },
     { id: 'food_license', category: '인허가/행정', title: '휴게음식점 영업신고', description: '구청 위생과 신고', icon: BookOpen, estimatedCost: { min: 0, max: 5, unit: '만원' }, isRequired: true },
+    { id: 'health_cert', category: '인허가/행정', title: '보건증 발급', description: '보건소 방문', icon: Shield, estimatedCost: { min: 0, max: 3, unit: '만원' }, isRequired: true },
     { id: 'hygiene_edu', category: '인허가/행정', title: '위생교육 이수', description: '한국외식업중앙회 위생교육', icon: GraduationCap, estimatedCost: { min: 2, max: 4, unit: '만원' }, isRequired: true },
-    { id: 'demolition', category: '시설/공사', title: '철거 및 원상복구', description: '기존 시설 철거', icon: Hammer, estimatedCost: { min: 50, max: 150, unit: '평당 만원' }, isRequired: true },
-    { id: 'interior', category: '시설/공사', title: '인테리어 시공', description: '카페 컨셉 인테리어', icon: PaintBucket, estimatedCost: { min: 200, max: 500, unit: '평당 만원' }, isRequired: true },
-    { id: 'signage', category: '시설/공사', title: '간판/사인물', description: '외부 간판, 메뉴보드', icon: SignpostBig, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
     { id: 'espresso_machine', category: '장비', title: '에스프레소 머신', description: '2그룹 이상 반자동/자동', icon: Coffee, estimatedCost: { min: 500, max: 3000, unit: '만원' }, isRequired: true },
     { id: 'grinder', category: '장비', title: '커피 그라인더', description: '온디맨드 그라인더', icon: Coffee, estimatedCost: { min: 100, max: 500, unit: '만원' }, isRequired: true },
     { id: 'refrigerator', category: '장비', title: '냉장고/제빙기', description: '쇼케이스, 제빙기', icon: Refrigerator, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
-    { id: 'furniture', category: '장비', title: '테이블/의자', description: '홀 가구', icon: Armchair, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
-    { id: 'pos_system', category: '운영 준비', title: 'POS 시스템', description: '포스기, 카드단말기', icon: Monitor, estimatedCost: { min: 50, max: 150, unit: '만원' }, isRequired: true },
-    { id: 'supplier', category: '운영 준비', title: '원두/부자재 공급', description: '원두, 우유, 시럽 등', icon: Store, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
-    { id: 'insurance', category: '운영 준비', title: '영업배상책임보험', description: '필수 가입', icon: Shield, estimatedCost: { min: 20, max: 50, unit: '연 만원' }, isRequired: true },
+    { id: 'furniture', category: '장비', title: '테이블/의자', description: '카페 감성 홀 가구', icon: Armchair, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'coffee_supplier', category: '운영 준비', title: '원두 거래처', description: '로스터리 계약, 원두 선정', icon: Store, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
+    { id: 'barista_training', category: '운영 준비', title: '바리스타 교육', description: '커피 추출 교육', icon: GraduationCap, estimatedCost: { min: 50, max: 200, unit: '만원' }, isRequired: false },
+    { id: 'delivery_app', category: '운영 준비', title: '배달앱 입점', description: '배민, 요기요 (선택)', icon: Bike, estimatedCost: { min: 0, max: 50, unit: '만원' }, isRequired: false },
   ],
 
-  // 기본 (그 외 업종)
-  default: [
-    { id: 'business_registration', category: '인허가/행정', title: '사업자등록', description: '세무서 사업자등록', icon: FileText, estimatedCost: { min: 0, max: 0, unit: '무료' }, isRequired: true },
-    { id: 'license', category: '인허가/행정', title: '영업허가/신고', description: '업종별 인허가', icon: BookOpen, estimatedCost: { min: 0, max: 10, unit: '만원' }, isRequired: true },
-    { id: 'demolition', category: '시설/공사', title: '철거 및 원상복구', description: '기존 시설 철거', icon: Hammer, estimatedCost: { min: 50, max: 150, unit: '평당 만원' }, isRequired: true },
-    { id: 'interior', category: '시설/공사', title: '인테리어 시공', description: '업종별 맞춤 인테리어', icon: PaintBucket, estimatedCost: { min: 150, max: 400, unit: '평당 만원' }, isRequired: true },
-    { id: 'signage', category: '시설/공사', title: '간판/사인물', description: '외부 간판, 내부 사인물', icon: SignpostBig, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
+  // 주점/바
+  pub: [
+    { id: 'food_license', category: '인허가/행정', title: '일반음식점 영업신고', description: '주류 판매 위해 일반음식점 필수', icon: BookOpen, estimatedCost: { min: 0, max: 5, unit: '만원' }, isRequired: true },
+    { id: 'health_cert', category: '인허가/행정', title: '보건증 발급', description: '보건소 방문', icon: Shield, estimatedCost: { min: 0, max: 3, unit: '만원' }, isRequired: true },
+    { id: 'hygiene_edu', category: '인허가/행정', title: '위생교육 이수', description: '한국외식업중앙회 위생교육', icon: GraduationCap, estimatedCost: { min: 2, max: 4, unit: '만원' }, isRequired: true },
+    { id: 'ventilation', category: '시설/공사', title: '환기 시스템', description: '주방 환기, 홀 공조', icon: Wind, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'refrigerator', category: '장비', title: '냉장고/제빙기', description: '음료 냉장고, 제빙기', icon: Refrigerator, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'furniture', category: '장비', title: '테이블/의자/바', description: '홀 가구, 바 테이블', icon: Armchair, estimatedCost: { min: 300, max: 1000, unit: '만원' }, isRequired: true },
+    { id: 'liquor_supplier', category: '운영 준비', title: '주류사 계약', description: '맥주, 소주, 양주 계약 (냉장고/제빙기 협상!)', icon: Beer, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
+    { id: 'kitchen_equip', category: '장비', title: '간단 주방 장비', description: '안주 조리용 장비', icon: ChefHat, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
+  ],
+
+  // 소매/편의점
+  retail: [
+    { id: 'retail_license', category: '인허가/행정', title: '소매업 신고', description: '업종별 신고/등록', icon: BookOpen, estimatedCost: { min: 0, max: 10, unit: '만원' }, isRequired: true },
+    { id: 'display_shelf', category: '장비', title: '진열대/선반', description: '곤돌라, 벽면 선반', icon: Box, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'showcase', category: '장비', title: '쇼케이스/냉장고', description: '음료 냉장고, 아이스크림 냉동고', icon: Refrigerator, estimatedCost: { min: 300, max: 1000, unit: '만원' }, isRequired: true },
+    { id: 'counter', category: '장비', title: '카운터/계산대', description: '계산대, 담배 진열대', icon: Store, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
+    { id: 'inventory_system', category: '운영 준비', title: '재고관리 시스템', description: '바코드, 재고 관리', icon: Monitor, estimatedCost: { min: 50, max: 200, unit: '만원' }, isRequired: true },
+    { id: 'supplier', category: '운영 준비', title: '도매처 계약', description: '상품 공급 계약', icon: Truck, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
+  ],
+
+  // 미용/뷰티
+  beauty: [
+    { id: 'beauty_license', category: '인허가/행정', title: '미용사 면허', description: '국가자격증 확인', icon: BookOpen, estimatedCost: { min: 0, max: 0, unit: '자격증' }, isRequired: true },
+    { id: 'beauty_permit', category: '인허가/행정', title: '미용업 신고', description: '구청 위생과 신고', icon: FileText, estimatedCost: { min: 0, max: 5, unit: '만원' }, isRequired: true },
+    { id: 'plumbing', category: '시설/공사', title: '샴푸대 배관', description: '샴푸대 위치, 배수 설계', icon: Store, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
+    { id: 'beauty_chair', category: '장비', title: '미용 의자/경대', description: '시술 의자, 거울, 경대', icon: Armchair, estimatedCost: { min: 300, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'shampoo_unit', category: '장비', title: '샴푸대', description: '샴푸 유닛, 배수 연결', icon: Store, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
+    { id: 'beauty_tools', category: '장비', title: '미용 기기/도구', description: '드라이어, 고데기, 염색 도구', icon: Scissors, estimatedCost: { min: 100, max: 400, unit: '만원' }, isRequired: true },
+    { id: 'beauty_supplier', category: '운영 준비', title: '미용 재료 거래처', description: '염색약, 펌약, 소모품', icon: Truck, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
+  ],
+
+  // 헬스/운동
+  fitness: [
+    { id: 'sports_permit', category: '인허가/행정', title: '체육시설업 신고', description: '구청 체육과 신고', icon: BookOpen, estimatedCost: { min: 0, max: 10, unit: '만원' }, isRequired: true },
+    { id: 'shower_room', category: '시설/공사', title: '샤워실/탈의실', description: '샤워부스, 락커, 배관', icon: Store, estimatedCost: { min: 300, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'gym_equip', category: '장비', title: '운동 기구', description: '유산소, 웨이트 기구', icon: Dumbbell, estimatedCost: { min: 1000, max: 5000, unit: '만원' }, isRequired: true },
+    { id: 'locker', category: '장비', title: '락커/수납', description: '개인 락커, 수건 보관', icon: Box, estimatedCost: { min: 100, max: 400, unit: '만원' }, isRequired: true },
+    { id: 'flooring', category: '시설/공사', title: '바닥 시공', description: '운동용 특수 바닥재', icon: PaintBucket, estimatedCost: { min: 200, max: 600, unit: '만원' }, isRequired: true },
+    { id: 'trainer_hire', category: '운영 준비', title: '트레이너 채용', description: 'PT 트레이너, 자격 확인', icon: Users, estimatedCost: { min: 0, max: 0, unit: '인건비' }, isRequired: false },
+  ],
+
+  // 교육/학원
+  education: [
+    { id: 'academy_reg', category: '인허가/행정', title: '학원 등록', description: '교육청 학원 등록', icon: BookOpen, estimatedCost: { min: 0, max: 20, unit: '만원' }, isRequired: true },
+    { id: 'desk_chair', category: '장비', title: '책상/의자', description: '학생용 책걸상', icon: Armchair, estimatedCost: { min: 200, max: 600, unit: '만원' }, isRequired: true },
+    { id: 'whiteboard', category: '장비', title: '칠판/화이트보드', description: '강의용 보드, 스크린', icon: Box, estimatedCost: { min: 50, max: 200, unit: '만원' }, isRequired: true },
+    { id: 'edu_material', category: '장비', title: '교재/교구', description: '학습 교재, 교육 도구', icon: BookOpen, estimatedCost: { min: 100, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'teacher_hire', category: '운영 준비', title: '강사 채용', description: '과목별 강사 채용', icon: Users, estimatedCost: { min: 0, max: 0, unit: '인건비' }, isRequired: true },
+    { id: 'student_recruit', category: '운영 준비', title: '수강생 모집', description: '홍보, 상담, 등록', icon: Target, estimatedCost: { min: 50, max: 300, unit: '만원' }, isRequired: true },
+  ],
+
+  // 사무실
+  office: [
+    { id: 'office_furniture', category: '장비', title: '사무용 가구', description: '책상, 의자, 수납장', icon: Armchair, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'meeting_room', category: '장비', title: '회의실 세팅', description: '회의 테이블, 프로젝터', icon: Users, estimatedCost: { min: 100, max: 400, unit: '만원' }, isRequired: false },
+    { id: 'network', category: '운영 준비', title: '네트워크/전화', description: '인터넷, 전화 설치', icon: Wifi, estimatedCost: { min: 30, max: 100, unit: '만원' }, isRequired: true },
+  ],
+
+  // 기타 (default)
+  etc: [
+    { id: 'license', category: '인허가/행정', title: '업종별 인허가', description: '업종에 맞는 인허가', icon: BookOpen, estimatedCost: { min: 0, max: 20, unit: '만원' }, isRequired: true },
     { id: 'equipment', category: '장비', title: '업종별 장비', description: '필수 장비/집기', icon: Box, estimatedCost: { min: 500, max: 2000, unit: '만원' }, isRequired: true },
-    { id: 'pos_system', category: '운영 준비', title: 'POS/결제 시스템', description: '포스기, 카드단말기', icon: Monitor, estimatedCost: { min: 50, max: 150, unit: '만원' }, isRequired: true },
-    { id: 'cctv_internet', category: '운영 준비', title: 'CCTV/인터넷', description: '매장 보안, 통신', icon: Wifi, estimatedCost: { min: 50, max: 150, unit: '만원' }, isRequired: true },
-    { id: 'insurance', category: '운영 준비', title: '필수 보험', description: '화재/배상책임 보험', icon: Shield, estimatedCost: { min: 30, max: 100, unit: '연 만원' }, isRequired: true },
+    { id: 'furniture', category: '장비', title: '가구/집기', description: '테이블, 의자 등', icon: Armchair, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
   ],
 };
 
-// 업종 ID -> 체크리스트 매핑
+// 업종 ID -> 체크리스트 매핑 (공통 + 업종별)
 const getChecklistForCategory = (categoryId: string): Omit<ChecklistItem, 'status'>[] => {
-  if (categoryId === 'chicken') return CHECKLIST_BY_CATEGORY.chicken;
-  if (categoryId === 'cafe') return CHECKLIST_BY_CATEGORY.cafe;
-  return CHECKLIST_BY_CATEGORY.default;
+  const specificItems = CHECKLIST_BY_CATEGORY[categoryId] || CHECKLIST_BY_CATEGORY.etc;
+  // 공통 항목 + 업종별 특화 항목 합치기
+  return [...CHECKLIST_COMMON, ...specificItems];
 };
 
 // 동별 상권 정보
