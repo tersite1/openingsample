@@ -31,6 +31,10 @@ interface Partner {
   service_area: string[];
   is_active: boolean;
   created_at: string;
+  // 추가 필드
+  address: string;
+  owner_comment: string;
+  admin_memo: string;
 }
 
 interface Customer {
@@ -118,12 +122,13 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
   const [partnerForm, setPartnerForm] = useState<Partial<Partner>>({
     name: '', category: '', subcategory: '', contact_name: '', contact_phone: '',
     contact_email: '', description: '', price_min: 0, price_max: 0, price_unit: '만원',
-    commission_rate: 10, service_area: ['강남구'], is_active: true
+    commission_rate: 10, service_area: ['강남구'], is_active: true,
+    address: '', owner_comment: '', admin_memo: ''
   });
 
   // PM 폼
   const [pmForm, setPMForm] = useState<Partial<PM>>({
-    name: '', email: '', phone: '', specialty: [], is_active: true
+    name: '', email: '', phone: '', profile_image: '', specialty: [], is_active: true
   });
 
   useEffect(() => {
@@ -226,7 +231,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
     setPartnerForm({
       name: '', category: '', subcategory: '', contact_name: '', contact_phone: '',
       contact_email: '', description: '', price_min: 0, price_max: 0, price_unit: '만원',
-      commission_rate: 10, service_area: ['강남구'], is_active: true
+      commission_rate: 10, service_area: ['강남구'], is_active: true,
+      address: '', owner_comment: '', admin_memo: ''
     });
   };
 
@@ -938,6 +944,21 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                   <input type="number" className="w-full px-4 py-2 border rounded-lg" value={partnerForm.commission_rate} onChange={(e) => setPartnerForm({ ...partnerForm, commission_rate: Number(e.target.value) })} />
                 </div>
               </div>
+              {/* 위치 */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">업체 위치/주소</label>
+                <input type="text" className="w-full px-4 py-2 border rounded-lg" placeholder="서울시 강남구 역삼동 123-45" value={partnerForm.address || ''} onChange={(e) => setPartnerForm({ ...partnerForm, address: e.target.value })} />
+              </div>
+              {/* 사장 코멘트 */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">사장님 코멘트 (고객에게 표시)</label>
+                <textarea className="w-full px-4 py-2 border rounded-lg resize-none h-16" placeholder="창업 관련 전문 업체입니다. 성심성의껏 도와드리겠습니다." value={partnerForm.owner_comment || ''} onChange={(e) => setPartnerForm({ ...partnerForm, owner_comment: e.target.value })} />
+              </div>
+              {/* 관리자 메모 */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">관리자 메모 (내부용)</label>
+                <textarea className="w-full px-4 py-2 border rounded-lg resize-none h-16 bg-yellow-50" placeholder="내부 참고용 메모..." value={partnerForm.admin_memo || ''} onChange={(e) => setPartnerForm({ ...partnerForm, admin_memo: e.target.value })} />
+              </div>
             </div>
             <div className="sticky bottom-0 bg-white border-t px-6 py-4 flex justify-end gap-3">
               <Button variant="outline" onClick={() => { setShowAddModal(false); setEditingPartner(null); }}>취소</Button>
@@ -958,13 +979,43 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
               </button>
             </div>
             <div className="p-6 space-y-4">
+              {/* 프로필 사진 */}
+              <div className="flex flex-col items-center">
+                <div className="relative">
+                  <img
+                    src={pmForm.profile_image || '/favicon-new.png'}
+                    alt="프로필"
+                    className="w-24 h-24 rounded-full object-cover border-4 border-brand-100"
+                  />
+                  <label className="absolute bottom-0 right-0 w-8 h-8 bg-brand-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-brand-700 transition-colors">
+                    <Image size={16} className="text-white" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const fileExt = file.name.split('.').pop();
+                        const fileName = `pm_${Date.now()}.${fileExt}`;
+                        const { error } = await supabase.storage.from('profiles').upload(fileName, file);
+                        if (!error) {
+                          const { data } = supabase.storage.from('profiles').getPublicUrl(fileName);
+                          setPMForm({ ...pmForm, profile_image: data.publicUrl });
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">클릭하여 사진 변경</p>
+              </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">이름 *</label>
                 <input type="text" className="w-full px-4 py-2 border rounded-lg" value={pmForm.name} onChange={(e) => setPMForm({ ...pmForm, name: e.target.value })} />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">이메일 *</label>
-                <input type="email" className="w-full px-4 py-2 border rounded-lg" value={pmForm.email} onChange={(e) => setPMForm({ ...pmForm, email: e.target.value })} />
+                <label className="block text-sm font-bold text-gray-700 mb-1">이메일 * (PM 로그인 ID)</label>
+                <input type="email" className="w-full px-4 py-2 border rounded-lg" value={pmForm.email} onChange={(e) => setPMForm({ ...pmForm, email: e.target.value })} placeholder="pm1@opening.run" />
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">연락처</label>

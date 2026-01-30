@@ -15,7 +15,7 @@ const SIGNUP_SOURCES = [
 
 interface LoginViewProps {
   onLoginSuccess: () => void;
-  onAdminLogin?: (email: string, password: string) => boolean;
+  onAdminLogin?: (email: string, password: string) => boolean | Promise<boolean>;
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onAdminLogin }) => {
@@ -36,9 +36,12 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onAdminLog
     setSuccessMessage(null);
 
     try {
-      // 관리자 로그인 체크
-      if (!isRegister && onAdminLogin && onAdminLogin(email, password)) {
-        return; // 관리자 로그인 성공
+      // 관리자/PM 로그인 체크
+      if (!isRegister && onAdminLogin) {
+        const result = await onAdminLogin(email, password);
+        if (result) {
+          return; // 관리자/PM 로그인 성공
+        }
       }
 
       if (isRegister) {

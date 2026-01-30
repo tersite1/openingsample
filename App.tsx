@@ -37,6 +37,7 @@ import { ServiceJourneyView } from './components/ServiceJourneyView';
 import { Button, Input } from './components/Components';
 import { LoginView } from './components/LoginView';
 import { AdminView } from './components/AdminView';
+import { PMPortalView } from './components/PMPortalView';
 import { ArrowLeft, Grid, DoorOpen, X, Loader2, Plus } from 'lucide-react';
 
 // [수정] 기본 관리자 계정 정보 제거 (Auth Flow 도입)
@@ -52,6 +53,8 @@ function App() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isPM, setIsPM] = useState(false);
+  const [pmId, setPmId] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
 
   const [currentTab, setCurrentTab] = useState<MainTab>('HOME');
@@ -143,11 +146,14 @@ function App() {
       setUser(null);
       setIsAuthenticated(false);
       setIsAdmin(false);
+      setIsPM(false);
+      setPmId(null);
       setCurrentTab('HOME');
   };
 
-  // 관리자 로그인 핸들러 (ID: admin, PW: epdlfflalf1!)
-  const handleAdminLogin = (email: string, password: string): boolean => {
+  // 관리자/PM 로그인 핸들러
+  const handleAdminLogin = async (email: string, password: string): Promise<boolean> => {
+    // Admin 로그인 체크 (admin / epdlfflalf1!)
     if (email === 'admin' && password === 'epdlfflalf1!') {
       setIsAdmin(true);
       setIsAuthenticated(true);
@@ -160,14 +166,41 @@ function App() {
       });
       return true;
     }
+
+    // PM 로그인 체크 (pm이메일 / pm1234!)
+    if (password === 'pm1234!') {
+      const { data: pmData } = await supabase
+        .from('project_managers')
+        .select('*')
+        .eq('email', email)
+        .single();
+
+      if (pmData) {
+        setIsPM(true);
+        setPmId(pmData.id);
+        setIsAuthenticated(true);
+        setUser({
+          id: pmData.id,
+          name: pmData.name + ' PM',
+          phone: pmData.phone || '',
+          type: 'KAKAO',
+          joinedDate: new Date().toLocaleDateString()
+        });
+        return true;
+      }
+    }
+
     return false;
   };
 
   const handleGuestLogin = () => {
       setUser(ADMIN_USER);
       setIsAuthenticated(true);
-      // Load public data or empty state for guest
-      loadUserData();
+      // 게스트는 빈 상태로 시작 (다른 사람의 데이터 보이지 않음)
+      setConsultingBookings([]);
+      setSavedQuotes([]);
+      setActiveProjectId(null);
+      setHasActiveProject(false);
   };
 
   // 온보딩 완료 핸들러
@@ -373,6 +406,11 @@ function App() {
   // 3. Admin View
   if (isAdmin) {
       return <AdminView onLogout={handleLogout} />;
+  }
+
+  // 4. PM Portal View
+  if (isPM && pmId) {
+      return <PMPortalView pmId={pmId} onLogout={handleLogout} />;
   }
 
   const ModalWrapper: React.FC<{ children: React.ReactNode, title: string, onClose: () => void, maxWidth?: string }> = ({ children, title, onClose, maxWidth = 'max-w-xl' }) => (
