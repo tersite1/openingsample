@@ -206,10 +206,11 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
   };
 
   const loadStats = async () => {
-    const [customersRes, projectsRes, partnersRes] = await Promise.all([
-      supabase.from('profiles').select('id', { count: 'exact' }),
-      supabase.from('startup_projects').select('id', { count: 'exact' }),
-      supabase.from('partners').select('id', { count: 'exact' }).eq('is_active', true)
+    const [customersRes, projectsRes, partnersRes, pmsRes] = await Promise.all([
+      supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      supabase.from('startup_projects').select('*', { count: 'exact', head: true }),
+      supabase.from('partners').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      supabase.from('project_managers').select('*', { count: 'exact', head: true }).eq('is_available', true)
     ]);
 
     setStats({
@@ -218,7 +219,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
       totalRevenue: 0,
       monthlyRevenue: 0,
       activePartners: partnersRes.count || 0,
-      activePMs: pms.filter(pm => pm.is_active).length
+      activePMs: pmsRes.count || 0
     });
   };
 
@@ -412,6 +413,10 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
               <div className="flex justify-between">
                 <span className="text-gray-500">프로젝트</span>
                 <span className="font-bold">{stats.totalProjects}개</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">활성 PM</span>
+                <span className="font-bold text-brand-600">{stats.activePMs}명</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">파트너</span>
