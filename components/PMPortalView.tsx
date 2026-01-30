@@ -89,6 +89,7 @@ interface PMProfile {
   is_available: boolean;
 }
 
+// PM 관리 단계 (1-6: 고객 입력, 7-12: PM 제어)
 const STEP_LABELS: Record<number, string> = {
   1: '업종 선택',
   2: '위치 선택',
@@ -96,9 +97,22 @@ const STEP_LABELS: Record<number, string> = {
   4: '매장 규모',
   5: '체크리스트',
   6: '비용 확인',
-  7: 'PM 배정됨',
-  8: '창업 진행중',
-  9: '완료/사후관리'
+  7: '상담 시작',      // PM 배정 후
+  8: '비용 컨설팅',    // 견적/업체 배정
+  9: '계약/착수',      // 계약 및 공사
+  10: '진행중',        // 공사/준비
+  11: '오픈 완료',     // 오픈!
+  12: '사후관리'       // 해피콜/A/S
+};
+
+// 각 단계별 설명 및 액션
+const STEP_DETAILS: Record<number, { description: string; actions: string[]; color: string }> = {
+  7: { description: 'PM 배정 완료, 상담 시작', actions: ['첫 인사', '요구사항 파악'], color: 'blue' },
+  8: { description: '비용 견적 및 협력업체 배정', actions: ['비용 보고서 전송', '업체 카드 전달'], color: 'purple' },
+  9: { description: '계약 진행 및 공사 착수', actions: ['계약 안내', '일정 공유'], color: 'orange' },
+  10: { description: '공사 및 오픈 준비 진행', actions: ['진행 상황 공유', '최종 점검'], color: 'yellow' },
+  11: { description: '오픈 완료! 축하드립니다', actions: ['축하 메시지', '리뷰 요청'], color: 'green' },
+  12: { description: '사후관리 및 A/S 지원', actions: ['해피콜', 'A/S 접수'], color: 'slate' },
 };
 
 const CHECKLIST_CATEGORIES = [
@@ -126,6 +140,8 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
   const [uploadingImage, setUploadingImage] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [showStepModal, setShowStepModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -369,27 +385,92 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
     if (!selectedProject) return;
 
     const nextStep = selectedProject.current_step + 1;
-    if (nextStep > 9) return;
+    if (nextStep > 12) return;
+
+    await setProjectStep(nextStep);
+  };
+
+  // 특정 단계로 설정
+  const setProjectStep = async (step: number, notify: boolean = true) => {
+    if (!selectedProject) return;
+
+    const status = step >= 11 ? 'COMPLETED' : step >= 7 ? 'IN_PROGRESS' : 'PM_ASSIGNED';
 
     const { error } = await supabase
       .from('startup_projects')
       .update({
-        current_step: nextStep,
-        pm_approved_step: nextStep,
-        status: nextStep >= 8 ? 'IN_PROGRESS' : 'PM_ASSIGNED'
+        current_step: step,
+        pm_approved_step: step,
+        status
       })
       .eq('id', selectedProject.id);
 
     if (!error) {
-      await supabase.from('project_messages').insert({
-        project_id: selectedProject.id,
-        sender_type: 'SYSTEM',
-        message: `✅ PM이 다음 단계로 진행을 승인했습니다: ${STEP_LABELS[nextStep]}`
-      });
+      if (notify) {
+        const stepDetail = STEP_DETAILS[step];
+        await supabase.from('project_messages').insert({
+          project_id: selectedProject.id,
+          sender_type: 'SYSTEM',
+          message: `📍 **현재 단계: ${STEP_LABELS[step]}**\n\n${stepDetail?.description || ''}\n\n담당 PM이 진행 상황을 업데이트했습니다.`
+        });
+        loadMessages(selectedProject.id);
+      }
 
-      setSelectedProject({ ...selectedProject, current_step: nextStep, pm_approved_step: nextStep });
+      setSelectedProject({ ...selectedProject, current_step: step, pm_approved_step: step, status });
       loadPMData();
+      setShowStepModal(false);
     }
+  };
+
+  // 비용 컨설팅 보고서 전송
+  const sendCostReport = async () => {
+    if (!selectedProject) return;
+
+    // 체크리스트에서 도움 필요 항목들의 예상 비용 계산
+    const worryItems = selectedProject.checklist_data?.filter(i => i.status === 'worry') || [];
+    const assignedItems = assignments.filter(a => a.status !== 'pending');
+
+    let reportMessage = `📊 **창업 비용 컨설팅 보고서**\n\n`;
+    reportMessage += `🏪 ${selectedProject.business_category} | 강남구 ${selectedProject.location_dong} | ${selectedProject.store_size}평\n\n`;
+    reportMessage += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    // 배정된 협력업체 정보
+    if (assignedItems.length > 0) {
+      reportMessage += `**🤝 배정된 협력업체**\n\n`;
+      assignedItems.forEach(item => {
+        const checklistItem = selectedProject.checklist_data?.find(c => c.id === item.checklist_item_id);
+        reportMessage += `• ${checklistItem?.title || item.checklist_item_id}\n`;
+        reportMessage += `  └ ${item.partner?.name} (${item.partner?.price_min}~${item.partner?.price_max}${item.partner?.price_unit})\n\n`;
+      });
+    }
+
+    reportMessage += `**💰 총 예상 비용: ${(selectedProject.estimated_total / 10000).toFixed(0)}만원**\n\n`;
+    reportMessage += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+    reportMessage += `궁금한 점이 있으시면 언제든 문의해주세요! 😊`;
+
+    await supabase.from('project_messages').insert({
+      project_id: selectedProject.id,
+      sender_type: 'PM',
+      message: reportMessage
+    });
+
+    loadMessages(selectedProject.id);
+    setShowReportModal(false);
+  };
+
+  // 해피콜 메시지 전송
+  const sendHappyCallMessage = async () => {
+    if (!selectedProject) return;
+
+    const message = `📞 **오픈 후 해피콜**\n\n안녕하세요! 담당 PM입니다.\n\n${selectedProject.business_category} 오픈 이후 운영은 잘 되고 계신가요?\n\n혹시 추가로 도움이 필요하신 부분이 있으시면 언제든 말씀해주세요.\n\n• 장비 A/S 필요하신 부분\n• 추가 인테리어/보수 필요하신 부분\n• 마케팅/홍보 지원\n• 기타 운영 관련 문의\n\n항상 응원하겠습니다! 🎉`;
+
+    await supabase.from('project_messages').insert({
+      project_id: selectedProject.id,
+      sender_type: 'PM',
+      message
+    });
+
+    loadMessages(selectedProject.id);
   };
 
   const updateProfile = async () => {
@@ -616,23 +697,38 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
                     예상 {(selectedProject.estimated_total / 10000).toFixed(0)}만원
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
                   {getWorryCount() > 0 && (
                     <span className="px-3 py-1 rounded-full text-sm font-bold bg-orange-100 text-orange-700">
                       도움 필요 {getWorryCount()}건
                     </span>
                   )}
-                  <span className={`px-3 py-1 rounded-full text-sm font-bold ${
-                    selectedProject.current_step >= 8
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-yellow-100 text-yellow-700'
-                  }`}>
-                    {STEP_LABELS[selectedProject.current_step]}
-                  </span>
-                  {selectedProject.current_step < 9 && (
-                    <Button onClick={advanceProjectStep}>
-                      <CheckCircle size={18} className="mr-2" />
-                      다음 단계 승인
+                  <button
+                    onClick={() => setShowStepModal(true)}
+                    className={`px-3 py-1 rounded-full text-sm font-bold cursor-pointer hover:opacity-80 transition-opacity ${
+                      selectedProject.current_step >= 11
+                        ? 'bg-green-100 text-green-700'
+                        : selectedProject.current_step >= 7
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-yellow-100 text-yellow-700'
+                    }`}
+                  >
+                    📍 {STEP_LABELS[selectedProject.current_step]} ▼
+                  </button>
+                  {selectedProject.current_step >= 7 && selectedProject.current_step < 12 && (
+                    <Button onClick={advanceProjectStep} className="text-sm">
+                      <ArrowRight size={16} className="mr-1" />
+                      다음 단계
+                    </Button>
+                  )}
+                  {selectedProject.current_step === 8 && (
+                    <Button onClick={() => setShowReportModal(true)} className="text-sm bg-purple-600 hover:bg-purple-700">
+                      📊 비용 보고서
+                    </Button>
+                  )}
+                  {selectedProject.current_step >= 11 && (
+                    <Button onClick={sendHappyCallMessage} className="text-sm bg-pink-600 hover:bg-pink-700">
+                      📞 해피콜
                     </Button>
                   )}
                 </div>
@@ -1047,6 +1143,103 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 단계 선택 모달 */}
+      {showStepModal && selectedProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-hidden m-4">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
+              <h2 className="text-xl font-bold">진행 단계 설정</h2>
+              <button
+                onClick={() => setShowStepModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[60vh]">
+              <p className="text-sm text-gray-500 mb-4">단계를 선택하면 고객에게 알림이 전송됩니다.</p>
+              <div className="space-y-2">
+                {[7, 8, 9, 10, 11, 12].map(step => (
+                  <button
+                    key={step}
+                    onClick={() => setProjectStep(step)}
+                    className={`w-full text-left p-4 rounded-xl border-2 transition-colors ${
+                      selectedProject.current_step === step
+                        ? 'border-brand-500 bg-brand-50'
+                        : 'border-gray-200 hover:border-brand-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold">{step - 6}단계: {STEP_LABELS[step]}</p>
+                        <p className="text-sm text-gray-500">{STEP_DETAILS[step]?.description}</p>
+                      </div>
+                      {selectedProject.current_step === step && (
+                        <Check className="text-brand-600" size={20} />
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 비용 보고서 전송 모달 */}
+      {showReportModal && selectedProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden m-4">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
+              <h2 className="text-xl font-bold">📊 비용 컨설팅 보고서</h2>
+              <button
+                onClick={() => setShowReportModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                <p className="font-bold mb-2">{selectedProject.business_category} 창업</p>
+                <p className="text-sm text-gray-600">강남구 {selectedProject.location_dong} · {selectedProject.store_size}평</p>
+                <p className="text-2xl font-black text-brand-600 mt-2">
+                  예상 {(selectedProject.estimated_total / 10000).toFixed(0)}만원
+                </p>
+              </div>
+
+              {assignments.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-sm font-bold text-gray-700 mb-2">배정된 협력업체</p>
+                  <div className="space-y-2">
+                    {assignments.map(a => (
+                      <div key={a.id} className="flex items-center justify-between text-sm p-2 bg-gray-50 rounded">
+                        <span>{a.partner?.name}</span>
+                        <span className="text-gray-500">{a.partner?.price_min}~{a.partner?.price_max}{a.partner?.price_unit}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <p className="text-sm text-gray-500 mb-4">
+                위 내용을 고객에게 채팅으로 전송합니다.
+              </p>
+
+              <div className="flex gap-3">
+                <Button onClick={() => setShowReportModal(false)} className="flex-1 bg-gray-200 text-gray-700 hover:bg-gray-300">
+                  취소
+                </Button>
+                <Button onClick={sendCostReport} className="flex-1">
+                  <Send size={18} className="mr-2" />
+                  전송하기
+                </Button>
+              </div>
             </div>
           </div>
         </div>
