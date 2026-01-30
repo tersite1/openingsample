@@ -208,46 +208,75 @@ export const CATEGORY_TREE: CategoryNode[] = [
   }
 ];
 
-// 2. 오픈 프로세스 태스크 (체크리스트용) - [최신 기획 반영]
+// 2. 오픈 프로세스 태스크 (체크리스트용) - 21개 매장 운영자 체크리스트 기반
 export const OPEN_TASK_CATEGORIES: OpenTaskCategory[] = [
-  { id: 'CONSULTING', label: '컨설팅', description: '입지 분석부터 예산 진단까지' },
-  { id: 'CONSTRUCTION', label: '공사/정리', description: '철거부터 인테리어, 청소까지' },
-  { id: 'OPERATION', label: '운영 준비', description: '매장 운영 필수 인프라' },
-  { id: 'OPENING_LITE', label: '오프닝 패키지', description: '비용 절감의 핵심 솔루션' },
+  { id: 'PLANNING', label: '1. 사전 준비', description: '본질 정리, 메뉴 개발, 예산 수립' },
+  { id: 'LOCATION', label: '2. 입지/계약', description: '상권 분석, 부동산 계약' },
+  { id: 'PERMIT', label: '3. 인허가/행정', description: '보건증, 영업신고, 사업자등록' },
+  { id: 'CONSTRUCTION', label: '4. 공사/시공', description: '철거, 인테리어, 설비' },
+  { id: 'EQUIPMENT', label: '5. 집기/장비', description: '주방 장비, 가구, 집기' },
+  { id: 'SYSTEM', label: '6. 시스템 세팅', description: 'POS, 카드, 통신, 도매' },
+  { id: 'OPERATION', label: '7. 인력/운영', description: '직원 채용, 매뉴얼, 교육' },
+  { id: 'MARKETING', label: '8. 오픈/마케팅', description: 'SNS, 홍보, 오픈 준비' },
 ];
 
 export const OPEN_PROCESS_TASKS: OpenTaskItem[] = [
-  // 0. 컨설팅 (입지/분석/예산)
-  { id: 'location_search', category: 'CONSULTING', title: '입지 탐색', description: '업종 기준 상권 적합도, 비교, 리스크 경고', iconType: 'map' },
-  { id: 'location_analysis', category: 'CONSULTING', title: '상권 분석', description: '유동인구, 경쟁업체, 배후수요 분석', iconType: 'chart' },
-  { id: 'permit_guide', category: 'CONSULTING', title: '인허가/행정 가이드', description: '업종별 점포 가능 여부, 불가/주의/추가조건 안내', iconType: 'clipboard' },
-  { id: 'total_cost', category: 'CONSULTING', title: '예상 창업 총액', description: '철거, 원상복구, 보증금/권리금 기회비용 포함', iconType: 'calculator' },
-  { id: 'real_estate', category: 'CONSULTING', title: '부동산 중개', description: '전문 부동산 연결 및 계약 지원', iconType: 'building' },
+  // 1. 사전 준비 (본질 정리)
+  { id: 'concept', category: 'PLANNING', title: '창업 컨셉 정리', description: '3W(Who, What, Why) 정립, 차별성 확보', iconType: 'lightbulb' },
+  { id: 'menu_dev', category: 'PLANNING', title: '메뉴 개발/확정', description: '원가율, 제조 난이도, 회전률, 플레이팅', iconType: 'utensils' },
+  { id: 'budget_plan', category: 'PLANNING', title: '예산 계획', description: '창업비 50%, 나머지 50%는 버티기용', iconType: 'calculator' },
+  { id: 'market_research', category: 'PLANNING', title: '시장 조사', description: '성공/망한 매장 분석, 경쟁업체 파악', iconType: 'chart' },
 
-  // 1. 공사/정리
-  { id: 'demolition', category: 'CONSTRUCTION', title: '철거', description: '기존 시설 철거 및 폐기물 처리', iconType: 'hammer' },
-  { id: 'restoration', category: 'CONSTRUCTION', title: '원상복구', description: '계약 종료 시 원상복구 리스크 점검', iconType: 'refresh' },
-  { id: 'interior', category: 'CONSTRUCTION', title: '인테리어 시공', description: '업종별 맞춤 설계 및 시공', iconType: 'paint' },
-  { id: 'signage', category: 'CONSTRUCTION', title: '간판/사인물', description: '외부 간판, 내부 사인물, LED 등', iconType: 'sign' },
-  { id: 'cleaning', category: 'CONSTRUCTION', title: '전문 청소', description: '준공/입주 딥클리닝', iconType: 'sparkles' },
+  // 2. 입지/계약
+  { id: 'location_search', category: 'LOCATION', title: '상권 선정', description: '유동인구, 타겟 고객, 상권 특성 분석', iconType: 'map' },
+  { id: 'real_estate', category: 'LOCATION', title: '부동산 탐색', description: '공인중개사 비교, 여러 매물 비교', iconType: 'building' },
+  { id: 'registry_check', category: 'LOCATION', title: '등기부등본 확인', description: '집주인, 대출 여부, 권리관계 확인', iconType: 'file' },
+  { id: 'facility_check', category: 'LOCATION', title: '시설 점검', description: '전기 용량, 도시가스, 닥트, 수도/배수, 화장실', iconType: 'clipboard' },
+  { id: 'contract', category: 'LOCATION', title: '부동산 계약', description: '렌트프리 협상, 권리금 흥정 (필수!)', iconType: 'pen' },
 
-  // 2. 운영 준비
-  { id: 'internet', category: 'OPERATION', title: '인터넷', description: '업소용 인터넷 설치', iconType: 'wifi' },
-  { id: 'cctv', category: 'OPERATION', title: 'CCTV', description: '보안 카메라 설치 및 모니터링', iconType: 'camera' },
-  { id: 'pos', category: 'OPERATION', title: 'POS/키오스크', description: '결제 시스템 및 주문 단말기', iconType: 'tablet' },
-  { id: 'insurance_fire', category: 'OPERATION', title: '화재 보험', description: '필수 화재 보험 가입', iconType: 'shield' },
-  { id: 'insurance_liability', category: 'OPERATION', title: '배상책임 보험', description: '영업배상책임 보험 가입', iconType: 'shield' },
-  { id: 'beverage', category: 'OPERATION', title: '음료 도매', description: '음료 공급업체 매칭', iconType: 'coffee' },
-  { id: 'liquor', category: 'OPERATION', title: '주류 도매', description: '주류사 최저가 매칭', iconType: 'wine' },
-  { id: 'delivery_setup', category: 'OPERATION', title: '배달 대행', description: '권역 세팅 + 배민/요기요 등 업체 컨택', iconType: 'bike' },
-  { id: 'delivery_photo', category: 'OPERATION', title: '배달 서비스 사진', description: '메뉴 사진 촬영 및 시안 제작', iconType: 'image' },
-  { id: 'menu_photo', category: 'OPERATION', title: '메뉴판/홍보물', description: '메뉴판, 전단지, 현수막 제작', iconType: 'file' },
+  // 3. 인허가/행정
+  { id: 'health_cert', category: 'PERMIT', title: '보건증 발급', description: '가까운 보건소 방문, 신분증 지참', iconType: 'heart' },
+  { id: 'hygiene_edu', category: 'PERMIT', title: '위생교육 수료', description: '첫 창업은 오프라인 필수, 인터넷 가능(재창업)', iconType: 'book' },
+  { id: 'business_permit', category: 'PERMIT', title: '영업신고증 발급', description: '구청 위생과, 일반음식점 권장 (세금 혜택)', iconType: 'stamp' },
+  { id: 'business_reg', category: 'PERMIT', title: '사업자등록증', description: '세무서 민원실, 영업신고증 필요', iconType: 'file' },
 
-  // 3. 오프닝 패키지 (핵심)
-  { id: 'used_package', category: 'OPENING_LITE', title: '중고 가구/집기 패키지', description: 'A급 검수 자재 + 설치', iconType: 'box', isOpeningExclusive: true },
-  { id: 'consulting_premium', category: 'OPENING_LITE', title: '프리미엄 컨설팅', description: '예산/구성 최적화 1:1 진단', iconType: 'user', isOpeningExclusive: true },
-  { id: '3d_link', category: 'OPENING_LITE', title: '3D 인테리어 시안', description: '미리보는 배치 체험', iconType: 'cube', isOpeningExclusive: true },
-  { id: 'turnkey', category: 'OPENING_LITE', title: '턴키 패키지', description: '상담부터 오픈까지 원스톱 솔루션', iconType: 'rocket', isOpeningExclusive: true },
+  // 4. 공사/시공
+  { id: 'demolition', category: 'CONSTRUCTION', title: '철거 공사', description: '폐기물 처리 비용 포함 계약', iconType: 'hammer' },
+  { id: 'plumbing', category: 'CONSTRUCTION', title: '배관/배수 공사', description: '배수 빠뜨리면 바닥 다시 깐다!', iconType: 'droplet' },
+  { id: 'electric', category: 'CONSTRUCTION', title: '전기/콘센트', description: '콘센트, 조명 여유있게 설계', iconType: 'zap' },
+  { id: 'floor', category: 'CONSTRUCTION', title: '바닥/타일 공사', description: '배관 후 바닥, 타일 순서', iconType: 'layers' },
+  { id: 'interior', category: 'CONSTRUCTION', title: '인테리어 목작업', description: '업종별 맞춤 설계', iconType: 'paint' },
+  { id: 'signage', category: 'CONSTRUCTION', title: '간판 설치', description: '외부 간판, 내부 사인물', iconType: 'sign' },
+  { id: 'cleaning', category: 'CONSTRUCTION', title: '전문 청소', description: '준공 딥클리닝', iconType: 'sparkles' },
+
+  // 5. 집기/장비
+  { id: 'kitchen_layout', category: 'EQUIPMENT', title: '주방 동선 설계', description: '콘센트 위치, 냉장고/화구 배치', iconType: 'layout' },
+  { id: 'kitchen_equip', category: 'EQUIPMENT', title: '주방 장비 구입', description: '중고 AS 확실한 업체 (잠수 주의)', iconType: 'flame' },
+  { id: 'furniture', category: 'EQUIPMENT', title: '테이블/의자', description: '테이블 수, 홀 동선 고려', iconType: 'armchair' },
+  { id: 'tableware', category: 'EQUIPMENT', title: '식기/그릇', description: '업종별 필수 식기류', iconType: 'utensils' },
+  { id: 'gas_work', category: 'EQUIPMENT', title: '가스 공사', description: '주방 집기 설치 후 진행', iconType: 'flame' },
+
+  // 6. 시스템 세팅
+  { id: 'bank_account', category: 'SYSTEM', title: '사업자 통장 개설', description: '사업자등록증 필요', iconType: 'wallet' },
+  { id: 'card_merchant', category: 'SYSTEM', title: '카드사 가맹', description: '카드 결제 가맹 계약', iconType: 'creditcard' },
+  { id: 'pos', category: 'SYSTEM', title: 'POS/키오스크', description: '주문/결제 시스템 설치', iconType: 'tablet' },
+  { id: 'internet', category: 'SYSTEM', title: '인터넷/통신', description: '업소용 인터넷, 전화 설치', iconType: 'wifi' },
+  { id: 'cctv', category: 'SYSTEM', title: 'CCTV', description: '보안 카메라 설치', iconType: 'camera' },
+  { id: 'beverage', category: 'SYSTEM', title: '음료/주류사 계약', description: '제빙기/냉장고 협상 필수!', iconType: 'wine' },
+
+  // 7. 인력/운영
+  { id: 'hiring', category: 'OPERATION', title: '직원 채용', description: '서빙, 주방, 설거지 파트별 채용', iconType: 'users' },
+  { id: 'manual', category: 'OPERATION', title: '운영 매뉴얼', description: '메뉴 매뉴얼 + 서비스 매뉴얼', iconType: 'book' },
+  { id: 'operation_design', category: 'OPERATION', title: '오퍼레이션 설계', description: '누가 어디서 무엇을 하는지 정리', iconType: 'clipboard' },
+  { id: 'insurance', category: 'OPERATION', title: '보험 가입', description: '화재보험, 영업배상책임보험', iconType: 'shield' },
+
+  // 8. 오픈/마케팅
+  { id: 'sns_setup', category: 'MARKETING', title: 'SNS 세팅', description: '인스타그램, 네이버 플레이스 완벽 세팅', iconType: 'instagram' },
+  { id: 'photo_shoot', category: 'MARKETING', title: '메뉴 사진 촬영', description: '전문 촬영 또는 셀프 촬영', iconType: 'image' },
+  { id: 'menu_print', category: 'MARKETING', title: '메뉴판/홍보물', description: '메뉴판, 전단지, 현수막', iconType: 'file' },
+  { id: 'delivery_setup', category: 'MARKETING', title: '배달앱 등록', description: '배민, 요기요, 쿠팡이츠 입점', iconType: 'bike' },
+  { id: 'soft_open', category: 'MARKETING', title: '소프트 오픈', description: '지인 초대 금지! 찐 손님으로 테스트', iconType: 'users' },
+  { id: 'grand_open', category: 'MARKETING', title: '그랜드 오픈', description: '인력 충분히 배치, 첫 손님 응대가 중요!', iconType: 'rocket' },
 ];
 
 // Helper to create mock products
