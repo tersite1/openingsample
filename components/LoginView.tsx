@@ -15,9 +15,10 @@ const SIGNUP_SOURCES = [
 
 interface LoginViewProps {
   onLoginSuccess: () => void;
+  onAdminLogin?: (email: string, password: string) => boolean;
 }
 
-export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
+export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onAdminLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -35,6 +36,11 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
     setSuccessMessage(null);
 
     try {
+      // 관리자 로그인 체크
+      if (!isRegister && onAdminLogin && onAdminLogin(email, password)) {
+        return; // 관리자 로그인 성공
+      }
+
       if (isRegister) {
         if (!name.trim()) {
           throw new Error('이름을 입력해주세요.');

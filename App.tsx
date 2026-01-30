@@ -36,6 +36,7 @@ import { ProjectDashboard } from './components/ProjectDashboard';
 import { ServiceJourneyView } from './components/ServiceJourneyView';
 import { Button, Input } from './components/Components';
 import { LoginView } from './components/LoginView';
+import { AdminView } from './components/AdminView';
 import { ArrowLeft, Grid, DoorOpen, X, Loader2, Plus } from 'lucide-react';
 
 // [수정] 기본 관리자 계정 정보 제거 (Auth Flow 도입)
@@ -50,6 +51,7 @@ const ADMIN_USER: User = {
 function App() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
   const [currentTab, setCurrentTab] = useState<MainTab>('HOME');
@@ -88,11 +90,16 @@ function App() {
 
   const handleSession = (session: any) => {
     if (session?.user) {
+      const email = session.user.email || '';
+      // 관리자 체크 (admin 계정)
+      if (email === 'admin@opening.run' || email === 'admin') {
+        setIsAdmin(true);
+      }
       setUser({
         id: session.user.id,
         name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || '사장님',
-        phone: session.user.email || '', 
-        type: 'KAKAO', 
+        phone: session.user.email || '',
+        type: 'KAKAO',
         joinedDate: new Date(session.user.created_at).toLocaleDateString()
       });
       setIsAuthenticated(true);
@@ -101,6 +108,7 @@ function App() {
       // Session expired or logged out
       setUser(null);
       setIsAuthenticated(false);
+      setIsAdmin(false);
     }
   };
 
@@ -134,7 +142,25 @@ function App() {
       await supabase.auth.signOut();
       setUser(null);
       setIsAuthenticated(false);
-      setCurrentTab('HOME'); 
+      setIsAdmin(false);
+      setCurrentTab('HOME');
+  };
+
+  // 관리자 로그인 핸들러 (ID: admin, PW: dailymeal1!)
+  const handleAdminLogin = (email: string, password: string): boolean => {
+    if (email === 'admin' && password === 'dailymeal1!') {
+      setIsAdmin(true);
+      setIsAuthenticated(true);
+      setUser({
+        id: 'admin',
+        name: '관리자',
+        phone: '',
+        type: 'KAKAO',
+        joinedDate: new Date().toLocaleDateString()
+      });
+      return true;
+    }
+    return false;
   };
 
   const handleGuestLogin = () => {
@@ -341,7 +367,12 @@ function App() {
 
   // 2. Unauthenticated State (Login View)
   if (!isAuthenticated) {
-      return <LoginView onLoginSuccess={handleGuestLogin} />;
+      return <LoginView onLoginSuccess={handleGuestLogin} onAdminLogin={handleAdminLogin} />;
+  }
+
+  // 3. Admin View
+  if (isAdmin) {
+      return <AdminView onLogout={handleLogout} />;
   }
 
   const ModalWrapper: React.FC<{ children: React.ReactNode, title: string, onClose: () => void, maxWidth?: string }> = ({ children, title, onClose, maxWidth = 'max-w-xl' }) => (

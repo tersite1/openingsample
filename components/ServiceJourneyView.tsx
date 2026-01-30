@@ -9,7 +9,9 @@ import {
   CreditCard, Rocket, HeartHandshake, Clock, Send, ArrowRight,
   BarChart3, Target, Lightbulb, Shield, Wifi, Wine, Bike, Map,
   BookOpen, Box, Hammer, PaintBucket, SignpostBig, SparklesIcon,
-  Check, X, AlertTriangle, HelpCircle, ChevronDown, ChevronUp
+  Check, X, AlertTriangle, HelpCircle, ChevronDown, ChevronUp,
+  Wind, Flame, ChefHat, Package, Monitor, Truck, Refrigerator, Armchair,
+  Users, TrendingDown, Navigation, MapPinned, CircleDollarSign, Eye
 } from 'lucide-react';
 
 interface ServiceJourneyViewProps {
@@ -90,37 +92,113 @@ const STORE_SIZES = [
   { id: 'large', label: '대형 (25평 이상)', value: 30 },
 ];
 
-// 창업 준비 체크리스트 (강남구 기준 예상 비용 포함)
-const STARTUP_CHECKLIST: Omit<ChecklistItem, 'status'>[] = [
-  // 공사/정리
-  { id: 'demolition', category: '공사/정리', title: '철거 및 원상복구', description: '기존 시설 철거, 폐기물 처리', icon: Hammer, estimatedCost: { min: 50, max: 150, unit: '평당 만원' }, isRequired: true },
-  { id: 'interior', category: '공사/정리', title: '인테리어 시공', description: '업종별 맞춤 인테리어', icon: PaintBucket, estimatedCost: { min: 150, max: 400, unit: '평당 만원' }, isRequired: true },
-  { id: 'signage', category: '공사/정리', title: '간판/사인물', description: '외부 간판, 내부 사인물', icon: SignpostBig, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
-  { id: 'cleaning', category: '공사/정리', title: '전문 청소', description: '준공/입주 딥클리닝', icon: SparklesIcon, estimatedCost: { min: 30, max: 80, unit: '만원' }, isRequired: false },
+// 업종별 체크리스트 데이터
+const CHECKLIST_BY_CATEGORY: Record<string, Omit<ChecklistItem, 'status'>[]> = {
+  // 치킨/분식 전용
+  chicken: [
+    // 인허가/행정
+    { id: 'business_registration', category: '인허가/행정', title: '사업자등록', description: '세무서 사업자등록 신청', icon: FileText, estimatedCost: { min: 0, max: 0, unit: '무료' }, isRequired: true },
+    { id: 'food_license', category: '인허가/행정', title: '음식점 영업신고', description: '구청 위생과 영업신고', icon: BookOpen, estimatedCost: { min: 0, max: 5, unit: '만원' }, isRequired: true },
+    { id: 'hygiene_edu', category: '인허가/행정', title: '위생교육 이수', description: '한국외식업중앙회 위생교육 (3시간)', icon: GraduationCap, estimatedCost: { min: 2, max: 4, unit: '만원' }, isRequired: true },
 
-  // 운영 준비
-  { id: 'network', category: '운영 준비', title: '통신 솔루션', description: '인터넷, CCTV, 포스기', icon: Wifi, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
-  { id: 'insurance', category: '운영 준비', title: '필수 보험', description: '화재/배상책임 보험', icon: Shield, estimatedCost: { min: 30, max: 100, unit: '연 만원' }, isRequired: true },
-  { id: 'beverage', category: '운영 준비', title: '음료/주류 도매', description: '주류사 계약, 음료 납품', icon: Wine, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: false },
-  { id: 'delivery', category: '운영 준비', title: '배달 대행', description: '배달권역 세팅, 배민/쿠팡 입점', icon: Bike, estimatedCost: { min: 50, max: 150, unit: '만원' }, isRequired: false },
+    // 시설/공사
+    { id: 'demolition', category: '시설/공사', title: '철거 및 원상복구', description: '기존 시설 철거, 폐기물 처리', icon: Hammer, estimatedCost: { min: 50, max: 150, unit: '평당 만원' }, isRequired: true },
+    { id: 'interior', category: '시설/공사', title: '인테리어 시공', description: '주방/홀 인테리어, 타일, 조명', icon: PaintBucket, estimatedCost: { min: 150, max: 350, unit: '평당 만원' }, isRequired: true },
+    { id: 'ventilation', category: '시설/공사', title: '주방 환기/후드 시스템', description: '튀김 연기 배출 필수 (치킨집 핵심)', icon: Wind, estimatedCost: { min: 300, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'signage', category: '시설/공사', title: '간판/사인물', description: '외부 간판, 메뉴판, 가격표', icon: SignpostBig, estimatedCost: { min: 200, max: 600, unit: '만원' }, isRequired: true },
+    { id: 'gas_work', category: '시설/공사', title: '가스 배관 공사', description: '업소용 가스 용량 증설', icon: Flame, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
 
-  // 입지/정보
-  { id: 'location', category: '입지/정보', title: '입지 탐색', description: '상권 분석, 매물 적합도 검토', icon: Map, estimatedCost: { min: 0, max: 0, unit: '무료 컨설팅' }, isRequired: true },
-  { id: 'permit', category: '입지/정보', title: '인허가/행정 가이드', description: '업종 허가, 영업 신고', icon: BookOpen, estimatedCost: { min: 0, max: 0, unit: '무료 가이드' }, isRequired: true },
+    // 주방 장비
+    { id: 'fryer', category: '주방 장비', title: '업소용 튀김기', description: '전기/가스 튀김기 2~3구', icon: ChefHat, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'refrigerator', category: '주방 장비', title: '업소용 냉장/냉동고', description: '원재료 보관용 대용량', icon: Refrigerator, estimatedCost: { min: 150, max: 400, unit: '만원' }, isRequired: true },
+    { id: 'prep_table', category: '주방 장비', title: '작업대/싱크대', description: '스텐 작업대, 3조 싱크대', icon: Box, estimatedCost: { min: 100, max: 250, unit: '만원' }, isRequired: true },
+    { id: 'packaging', category: '주방 장비', title: '포장 용기/봉투', description: '치킨박스, 봉투, 소스용기 등', icon: Package, estimatedCost: { min: 30, max: 100, unit: '만원 (초도물량)' }, isRequired: true },
 
-  // 오프닝 패키지
-  { id: 'furniture', category: '오프닝 패키지', title: '중고 가구/집기', description: 'A급 검수 자재 + 설치', icon: Box, estimatedCost: { min: 500, max: 2000, unit: '만원' }, isRequired: false },
-];
+    // 운영 준비
+    { id: 'pos_system', category: '운영 준비', title: 'POS/주문 시스템', description: '포스기, 주문접수 태블릿', icon: Monitor, estimatedCost: { min: 50, max: 150, unit: '만원' }, isRequired: true },
+    { id: 'delivery_app', category: '운영 준비', title: '배달앱 입점', description: '배민, 쿠팡이츠, 요기요 등록', icon: Bike, estimatedCost: { min: 0, max: 50, unit: '만원 (광고비 별도)' }, isRequired: true },
+    { id: 'delivery_agency', category: '운영 준비', title: '배달대행 계약', description: '배달권역 설정, 대행사 계약', icon: Truck, estimatedCost: { min: 0, max: 0, unit: '건당 과금' }, isRequired: true },
+    { id: 'supplier', category: '운영 준비', title: '원재료 공급처', description: '닭, 튀김가루, 소스 등 계약', icon: Store, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
+    { id: 'cctv_internet', category: '운영 준비', title: 'CCTV/인터넷', description: '매장 보안, 배달앱 연동용', icon: Wifi, estimatedCost: { min: 50, max: 150, unit: '만원' }, isRequired: true },
+    { id: 'insurance', category: '운영 준비', title: '영업배상책임보험', description: '음식점 필수 가입', icon: Shield, estimatedCost: { min: 20, max: 50, unit: '연 만원' }, isRequired: true },
+  ],
+
+  // 카페 전용
+  cafe: [
+    { id: 'business_registration', category: '인허가/행정', title: '사업자등록', description: '세무서 사업자등록 신청', icon: FileText, estimatedCost: { min: 0, max: 0, unit: '무료' }, isRequired: true },
+    { id: 'food_license', category: '인허가/행정', title: '휴게음식점 영업신고', description: '구청 위생과 신고', icon: BookOpen, estimatedCost: { min: 0, max: 5, unit: '만원' }, isRequired: true },
+    { id: 'hygiene_edu', category: '인허가/행정', title: '위생교육 이수', description: '한국외식업중앙회 위생교육', icon: GraduationCap, estimatedCost: { min: 2, max: 4, unit: '만원' }, isRequired: true },
+    { id: 'demolition', category: '시설/공사', title: '철거 및 원상복구', description: '기존 시설 철거', icon: Hammer, estimatedCost: { min: 50, max: 150, unit: '평당 만원' }, isRequired: true },
+    { id: 'interior', category: '시설/공사', title: '인테리어 시공', description: '카페 컨셉 인테리어', icon: PaintBucket, estimatedCost: { min: 200, max: 500, unit: '평당 만원' }, isRequired: true },
+    { id: 'signage', category: '시설/공사', title: '간판/사인물', description: '외부 간판, 메뉴보드', icon: SignpostBig, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'espresso_machine', category: '장비', title: '에스프레소 머신', description: '2그룹 이상 반자동/자동', icon: Coffee, estimatedCost: { min: 500, max: 3000, unit: '만원' }, isRequired: true },
+    { id: 'grinder', category: '장비', title: '커피 그라인더', description: '온디맨드 그라인더', icon: Coffee, estimatedCost: { min: 100, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'refrigerator', category: '장비', title: '냉장고/제빙기', description: '쇼케이스, 제빙기', icon: Refrigerator, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'furniture', category: '장비', title: '테이블/의자', description: '홀 가구', icon: Armchair, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'pos_system', category: '운영 준비', title: 'POS 시스템', description: '포스기, 카드단말기', icon: Monitor, estimatedCost: { min: 50, max: 150, unit: '만원' }, isRequired: true },
+    { id: 'supplier', category: '운영 준비', title: '원두/부자재 공급', description: '원두, 우유, 시럽 등', icon: Store, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
+    { id: 'insurance', category: '운영 준비', title: '영업배상책임보험', description: '필수 가입', icon: Shield, estimatedCost: { min: 20, max: 50, unit: '연 만원' }, isRequired: true },
+  ],
+
+  // 기본 (그 외 업종)
+  default: [
+    { id: 'business_registration', category: '인허가/행정', title: '사업자등록', description: '세무서 사업자등록', icon: FileText, estimatedCost: { min: 0, max: 0, unit: '무료' }, isRequired: true },
+    { id: 'license', category: '인허가/행정', title: '영업허가/신고', description: '업종별 인허가', icon: BookOpen, estimatedCost: { min: 0, max: 10, unit: '만원' }, isRequired: true },
+    { id: 'demolition', category: '시설/공사', title: '철거 및 원상복구', description: '기존 시설 철거', icon: Hammer, estimatedCost: { min: 50, max: 150, unit: '평당 만원' }, isRequired: true },
+    { id: 'interior', category: '시설/공사', title: '인테리어 시공', description: '업종별 맞춤 인테리어', icon: PaintBucket, estimatedCost: { min: 150, max: 400, unit: '평당 만원' }, isRequired: true },
+    { id: 'signage', category: '시설/공사', title: '간판/사인물', description: '외부 간판, 내부 사인물', icon: SignpostBig, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'equipment', category: '장비', title: '업종별 장비', description: '필수 장비/집기', icon: Box, estimatedCost: { min: 500, max: 2000, unit: '만원' }, isRequired: true },
+    { id: 'pos_system', category: '운영 준비', title: 'POS/결제 시스템', description: '포스기, 카드단말기', icon: Monitor, estimatedCost: { min: 50, max: 150, unit: '만원' }, isRequired: true },
+    { id: 'cctv_internet', category: '운영 준비', title: 'CCTV/인터넷', description: '매장 보안, 통신', icon: Wifi, estimatedCost: { min: 50, max: 150, unit: '만원' }, isRequired: true },
+    { id: 'insurance', category: '운영 준비', title: '필수 보험', description: '화재/배상책임 보험', icon: Shield, estimatedCost: { min: 30, max: 100, unit: '연 만원' }, isRequired: true },
+  ],
+};
+
+// 업종 ID -> 체크리스트 매핑
+const getChecklistForCategory = (categoryId: string): Omit<ChecklistItem, 'status'>[] => {
+  if (categoryId === 'chicken') return CHECKLIST_BY_CATEGORY.chicken;
+  if (categoryId === 'cafe') return CHECKLIST_BY_CATEGORY.cafe;
+  return CHECKLIST_BY_CATEGORY.default;
+};
+
+// 동별 상권 정보
+const DONG_INFO: Record<string, { competitors: number; footTraffic: string; avgRent: number; description: string }> = {
+  '역삼동': { competitors: 45, footTraffic: '일 평균 85,000명', avgRent: 350, description: '강남역 상권, 술집거리 밀집, 야간 유동인구 높음' },
+  '논현동': { competitors: 28, footTraffic: '일 평균 42,000명', avgRent: 280, description: '학동사거리 중심, 주거+상업 복합' },
+  '신사동': { competitors: 35, footTraffic: '일 평균 55,000명', avgRent: 400, description: '가로수길 상권, 젊은층 유동인구' },
+  '청담동': { competitors: 18, footTraffic: '일 평균 25,000명', avgRent: 500, description: '고급 상권, 배달보다 매장 중심' },
+  '삼성동': { competitors: 32, footTraffic: '일 평균 70,000명', avgRent: 380, description: '코엑스 상권, 직장인 중심' },
+  '대치동': { competitors: 22, footTraffic: '일 평균 35,000명', avgRent: 250, description: '학원가 상권, 저녁 시간대 집중' },
+  '압구정동': { competitors: 25, footTraffic: '일 평균 40,000명', avgRent: 420, description: '로데오거리, 젊은층+고소득층' },
+  '도곡동': { competitors: 15, footTraffic: '일 평균 20,000명', avgRent: 200, description: '주거 중심, 배달 수요 높음' },
+  '개포동': { competitors: 12, footTraffic: '일 평균 15,000명', avgRent: 180, description: '재건축 진행중, 배달 위주' },
+  '일원동': { competitors: 10, footTraffic: '일 평균 18,000명', avgRent: 170, description: '병원 상권, 안정적 수요' },
+};
 
 // 단계 정의
 const JOURNEY_STEPS = [
   { step: 1, title: '업종 선택', description: '어떤 창업을 준비하시나요?' },
   { step: 2, title: '위치 선택', description: '창업 예정 지역을 선택하세요' },
-  { step: 3, title: '매장 규모', description: '예상 평수를 입력하세요' },
-  { step: 4, title: '준비 체크리스트', description: '현재 상황을 체크해주세요' },
-  { step: 5, title: '예상 비용', description: '창업 비용을 확인하세요' },
-  { step: 6, title: 'PM 배정', description: '전담 매니저가 배정됩니다' },
+  { step: 3, title: '상권 분석', description: '선택한 지역의 상권을 분석합니다' },
+  { step: 4, title: '매장 규모', description: '예상 평수를 입력하세요' },
+  { step: 5, title: '준비 체크리스트', description: '현재 상황을 체크해주세요' },
+  { step: 6, title: '예상 비용', description: '창업 비용을 확인하세요' },
+  { step: 7, title: 'PM 배정', description: '전담 매니저가 배정됩니다' },
 ];
+
+// 동별 카카오맵 좌표
+const DONG_COORDINATES: Record<string, { lat: number; lng: number }> = {
+  '역삼동': { lat: 37.5007, lng: 127.0365 },
+  '논현동': { lat: 37.5112, lng: 127.0288 },
+  '신사동': { lat: 37.5239, lng: 127.0237 },
+  '청담동': { lat: 37.5247, lng: 127.0473 },
+  '삼성동': { lat: 37.5088, lng: 127.0628 },
+  '대치동': { lat: 37.4946, lng: 127.0576 },
+  '압구정동': { lat: 37.5273, lng: 127.0284 },
+  '도곡동': { lat: 37.4889, lng: 127.0463 },
+  '개포동': { lat: 37.4774, lng: 127.0521 },
+  '일원동': { lat: 37.4836, lng: 127.0856 },
+};
 
 export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }) => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -131,10 +209,16 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
   const [businessCategory, setBusinessCategory] = useState('');
   const [dong, setDong] = useState('');
   const [storeSize, setStoreSize] = useState(15);
-  const [checklist, setChecklist] = useState<ChecklistItem[]>(
-    STARTUP_CHECKLIST.map(item => ({ ...item, status: 'unchecked' as const }))
-  );
+  const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [pmMessage, setPmMessage] = useState('');
+
+  // 업종 선택 시 체크리스트 초기화
+  useEffect(() => {
+    if (businessCategory) {
+      const items = getChecklistForCategory(businessCategory);
+      setChecklist(items.map(item => ({ ...item, status: 'unchecked' as const })));
+    }
+  }, [businessCategory]);
 
   // 결과 데이터
   const [estimatedCosts, setEstimatedCosts] = useState<{ min: number; max: number }>({ min: 0, max: 0 });
@@ -358,10 +442,10 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
   };
 
   const goToNextStep = () => {
-    if (currentStep === 5) {
+    if (currentStep === 6) {
       createProject();
     } else {
-      setCurrentStep(prev => Math.min(prev + 1, 6));
+      setCurrentStep(prev => Math.min(prev + 1, 7));
     }
   };
 
@@ -373,9 +457,10 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
     switch (currentStep) {
       case 1: return businessCategory !== '';
       case 2: return dong !== '';
-      case 3: return storeSize > 0;
-      case 4: return true;
+      case 3: return true; // 상권 분석 보기만 하면 됨
+      case 4: return storeSize > 0;
       case 5: return true;
+      case 6: return true;
       default: return true;
     }
   };
@@ -391,8 +476,8 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
     );
   }
 
-  // PM 배정 후 화면 (Step 6+)
-  if (currentStep >= 6 && assignedPM) {
+  // PM 배정 후 화면 (Step 7+)
+  if (currentStep >= 7 && assignedPM) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         {/* 깔끔한 헤더 */}
@@ -628,8 +713,133 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
           </div>
         )}
 
-        {/* Step 3: 규모 선택 */}
-        {currentStep === 3 && (
+        {/* Step 3: 상권 분석 */}
+        {currentStep === 3 && dong && (
+          <div className="space-y-4">
+            {/* 지도 */}
+            <div className="bg-white rounded-xl border overflow-hidden">
+              <div className="aspect-video bg-gray-100 relative">
+                <iframe
+                  src={`https://map.kakao.com/link/map/${dong},${DONG_COORDINATES[dong]?.lat || 37.5},${DONG_COORDINATES[dong]?.lng || 127.0}`}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  className="absolute inset-0"
+                />
+                <div className="absolute top-3 left-3 bg-white px-3 py-1.5 rounded-lg shadow-lg">
+                  <div className="flex items-center gap-2">
+                    <MapPinned size={16} className="text-brand-600" />
+                    <span className="font-bold text-sm">강남구 {dong}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 상권 분석 요약 */}
+            {DONG_INFO[dong] && (
+              <>
+                <div className="bg-brand-50 rounded-xl p-4 border border-brand-100">
+                  <p className="text-sm text-brand-800">{DONG_INFO[dong].description}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {/* 유동인구 */}
+                  <div className="bg-white rounded-xl border p-4">
+                    <div className="flex items-center gap-2 mb-2 text-gray-500">
+                      <Users size={18} />
+                      <span className="text-xs font-bold">유동인구</span>
+                    </div>
+                    <p className="text-lg font-black text-slate-900">{DONG_INFO[dong].footTraffic}</p>
+                  </div>
+
+                  {/* 경쟁업체 */}
+                  <div className="bg-white rounded-xl border p-4">
+                    <div className="flex items-center gap-2 mb-2 text-gray-500">
+                      <Store size={18} />
+                      <span className="text-xs font-bold">
+                        주변 {BUSINESS_CATEGORIES.find(c => c.id === businessCategory)?.label || '음식점'}
+                      </span>
+                    </div>
+                    <p className="text-lg font-black text-slate-900">{DONG_INFO[dong].competitors}개</p>
+                    <p className="text-xs text-gray-500 mt-1">반경 500m 내</p>
+                  </div>
+
+                  {/* 평균 임대료 */}
+                  <div className="bg-white rounded-xl border p-4">
+                    <div className="flex items-center gap-2 mb-2 text-gray-500">
+                      <CircleDollarSign size={18} />
+                      <span className="text-xs font-bold">평균 임대료</span>
+                    </div>
+                    <p className="text-lg font-black text-slate-900">{DONG_INFO[dong].avgRent}만원</p>
+                    <p className="text-xs text-gray-500 mt-1">평당/월</p>
+                  </div>
+
+                  {/* 상권 등급 */}
+                  <div className="bg-white rounded-xl border p-4">
+                    <div className="flex items-center gap-2 mb-2 text-gray-500">
+                      <TrendingUp size={18} />
+                      <span className="text-xs font-bold">상권 등급</span>
+                    </div>
+                    <p className="text-lg font-black text-green-600">
+                      {DONG_INFO[dong].avgRent >= 350 ? 'A급' : DONG_INFO[dong].avgRent >= 250 ? 'B급' : 'C급'}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {DONG_INFO[dong].avgRent >= 350 ? '프리미엄' : DONG_INFO[dong].avgRent >= 250 ? '우량' : '보통'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 경쟁 분석 */}
+                <div className="bg-white rounded-xl border p-4">
+                  <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
+                    <Eye size={16} className="text-brand-600" />
+                    {BUSINESS_CATEGORIES.find(c => c.id === businessCategory)?.label} 경쟁 분석
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">경쟁 강도</span>
+                      <span className={`font-bold ${DONG_INFO[dong].competitors > 30 ? 'text-red-600' : DONG_INFO[dong].competitors > 20 ? 'text-yellow-600' : 'text-green-600'}`}>
+                        {DONG_INFO[dong].competitors > 30 ? '높음 (과밀)' : DONG_INFO[dong].competitors > 20 ? '보통' : '낮음 (기회)'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">배달 수요</span>
+                      <span className="font-bold text-brand-600">
+                        {DONG_INFO[dong].avgRent < 250 ? '높음' : '보통'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">추천도</span>
+                      <span className={`font-bold ${DONG_INFO[dong].competitors < 25 ? 'text-green-600' : 'text-yellow-600'}`}>
+                        {DONG_INFO[dong].competitors < 25 ? '추천' : '검토 필요'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 주의사항 */}
+                {DONG_INFO[dong].competitors > 30 && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle size={18} className="text-yellow-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold text-sm text-yellow-800">경쟁 과밀 지역</p>
+                        <p className="text-xs text-yellow-700 mt-1">
+                          해당 지역은 동종 업종이 많습니다. 차별화 전략이 필요하며, PM과 상세 상담을 권장합니다.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Step 4: 규모 선택 */}
+        {currentStep === 4 && (
           <div className="space-y-4">
             {STORE_SIZES.map(size => (
               <button
@@ -661,8 +871,8 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
           </div>
         )}
 
-        {/* Step 4: 체크리스트 */}
-        {currentStep === 4 && (
+        {/* Step 5: 체크리스트 */}
+        {currentStep === 5 && (
           <div className="space-y-4">
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-sm text-yellow-800">
               <p className="font-bold mb-1">💡 현재 상황을 체크해주세요</p>
@@ -721,8 +931,8 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
           </div>
         )}
 
-        {/* Step 5: 비용 산출 & PM 메시지 */}
-        {currentStep === 5 && (
+        {/* Step 6: 비용 산출 & PM 메시지 */}
+        {currentStep === 6 && (
           <div className="space-y-4">
             {/* 비용 요약 */}
             <div className="bg-gradient-to-br from-brand-600 to-brand-700 rounded-2xl p-5 text-white">
@@ -805,7 +1015,7 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack }
         >
           {loading ? (
             <Loader2 className="animate-spin" size={20} />
-          ) : currentStep === 5 ? (
+          ) : currentStep === 6 ? (
             <>
               <Rocket size={20} className="mr-2" />
               PM 배정받기
