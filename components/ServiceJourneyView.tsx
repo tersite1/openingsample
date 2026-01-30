@@ -207,10 +207,33 @@ const DONG_COORDINATES: Record<string, { lat: number; lng: number }> = {
   '일원동': { lat: 37.4836, lng: 127.0856 },
 };
 
+// 단계별 색상 테마
+const STEP_COLORS: Record<number, { bg: string; text: string; accent: string }> = {
+  7: { bg: 'from-blue-500 to-blue-600', text: 'text-blue-600', accent: 'bg-blue-100' },
+  8: { bg: 'from-purple-500 to-purple-600', text: 'text-purple-600', accent: 'bg-purple-100' },
+  9: { bg: 'from-orange-500 to-orange-600', text: 'text-orange-600', accent: 'bg-orange-100' },
+  10: { bg: 'from-yellow-500 to-yellow-600', text: 'text-yellow-600', accent: 'bg-yellow-100' },
+  11: { bg: 'from-green-500 to-green-600', text: 'text-green-600', accent: 'bg-green-100' },
+  12: { bg: 'from-slate-500 to-slate-600', text: 'text-slate-600', accent: 'bg-slate-100' },
+};
+
+const PM_STEP_LABELS: Record<number, string> = {
+  7: '상담 시작',
+  8: '비용 컨설팅',
+  9: '계약/착수',
+  10: '진행중',
+  11: '오픈 완료',
+  12: '사후관리'
+};
+
 export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, isGuestMode = false }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(!isGuestMode); // 게스트 모드는 로딩 없음
   const [project, setProject] = useState<Project | null>(null);
+
+  // 단계 변경 알림
+  const [showStepToast, setShowStepToast] = useState(false);
+  const [lastSeenStep, setLastSeenStep] = useState<number | null>(null);
 
   // 폼 데이터
   const [businessCategory, setBusinessCategory] = useState('');
@@ -282,15 +305,49 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
       setStoreSize(proj.store_size);
       setEstimatedCosts({ min: proj.estimated_total * 0.8, max: proj.estimated_total * 1.2 });
 
+      // 단계 변경 감지 및 토스트 표시
+      const savedStep = localStorage.getItem(`project_${proj.id}_step`);
+      if (savedStep && parseInt(savedStep) !== proj.current_step && proj.current_step >= 7) {
+        setShowStepToast(true);
+        setTimeout(() => setShowStepToast(false), 4000);
+      }
+      localStorage.setItem(`project_${proj.id}_step`, String(proj.current_step));
+      setLastSeenStep(proj.current_step);
+
       if (proj.pm) {
         setAssignedPM(proj.pm);
       }
 
       loadMessages(proj.id);
       subscribeToMessages(proj.id);
+      subscribeToProjectUpdates(proj.id);
     }
 
     setLoading(false);
+  };
+
+  // 프로젝트 변경사항 실시간 구독
+  const subscribeToProjectUpdates = (projectId: string) => {
+    supabase
+      .channel(`project-updates-${projectId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'startup_projects',
+        filter: `id=eq.${projectId}`
+      }, (payload: any) => {
+        const newStep = payload.new.current_step;
+        const prevStep = lastSeenStep || project?.current_step;
+
+        if (newStep !== prevStep && newStep >= 7) {
+          setCurrentStep(newStep);
+          setLastSeenStep(newStep);
+          setShowStepToast(true);
+          localStorage.setItem(`project_${projectId}_step`, String(newStep));
+          setTimeout(() => setShowStepToast(false), 4000);
+        }
+      })
+      .subscribe();
   };
 
   const loadMessages = async (projectId: string) => {
@@ -870,40 +927,64 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
   };
 
   // PM 배정 후 화면 (Step 7+)
+  const stepColor = STEP_COLORS[currentStep] || STEP_COLORS[7];
+  const pmStepNumber = currentStep >= 7 ? currentStep - 6 : 1;
+
   if (currentStep >= 7 && assignedPM) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         {showCancelDialog && <CancelDialog />}
 
-        {/* 깔끔한 헤더 */}
-        <div className="bg-white border-b px-4 py-3">
+        {/* 단계 변경 토스트 알림 */}
+        <div
+          className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-out ${
+            showStepToast
+              ? 'opacity-100 translate-y-0'
+              : 'opacity-0 -translate-y-4 pointer-events-none'
+          }`}
+        >
+          <div className={`bg-gradient-to-r ${stepColor.bg} text-white px-6 py-3 rounded-2xl shadow-lg flex items-center gap-3`}>
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-black text-lg">
+              {pmStepNumber}
+            </div>
+            <div>
+              <p className="text-white/80 text-xs font-bold">단계가 변경되었습니다</p>
+              <p className="font-bold text-lg">{PM_STEP_LABELS[currentStep]}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 깔끔한 헤더 + 단계별 색상 */}
+        <div className={`bg-gradient-to-r ${stepColor.bg} text-white px-4 py-3`}>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowCancelDialog(true)}
-              className="p-2 -ml-2 hover:bg-gray-100 rounded-full"
+              className="p-2 -ml-2 hover:bg-white/10 rounded-full"
             >
-              <X size={20} className="text-gray-500" />
+              <X size={20} className="text-white/80" />
             </button>
             <div className="flex-1 min-w-0">
-              <h1 className="font-bold text-lg text-slate-900 truncate">내 창업 프로젝트</h1>
-              <p className="text-xs text-gray-500">
+              <h1 className="font-bold text-lg truncate">내 창업 프로젝트</h1>
+              <p className="text-xs text-white/70">
                 강남구 {dong} · {BUSINESS_CATEGORIES.find(c => c.id === businessCategory)?.label} · {storeSize}평
               </p>
             </div>
-            <img src="/favicon-new.png" alt="오프닝" className="w-10 h-10 rounded-xl" />
+            <img src="/favicon-new.png" alt="오프닝" className="w-10 h-10 rounded-xl bg-white/20 p-1" />
           </div>
 
-          {/* 진행 상태 표시 */}
-          <div className="mt-3 pt-3 border-t">
+          {/* PM 진행 단계 표시 (6단계) */}
+          <div className="mt-4 pt-3 border-t border-white/20">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-brand-600">PM 배정 완료</span>
-              <span className="text-xs text-gray-400">7/7 단계</span>
+              <span className="text-sm font-bold">{PM_STEP_LABELS[currentStep]}</span>
+              <span className="text-xs text-white/70">{pmStepNumber}/6 단계</span>
             </div>
-            <div className="flex gap-1">
-              {JOURNEY_STEPS.map(s => (
+            <div className="flex gap-1.5">
+              {[7, 8, 9, 10, 11, 12].map(step => (
                 <div
-                  key={s.step}
-                  className="h-1.5 flex-1 rounded-full bg-brand-600"
+                  key={step}
+                  className={`h-2 flex-1 rounded-full transition-all ${
+                    step <= currentStep ? 'bg-white' : 'bg-white/30'
+                  }`}
                 />
               ))}
             </div>
