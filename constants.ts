@@ -257,6 +257,11 @@ export const OPEN_PROCESS_TASKS: OpenTaskItem[] = [
   { id: 'sports_permit', category: 'PERMIT', title: '체육시설업 신고', description: '구청 체육과, 시설 기준 확인', iconType: 'stamp', applicableTo: ['FITNESS'] },
   // PC방/오락
   { id: 'game_permit', category: 'PERMIT', title: '게임제공업 등록', description: '구청, 청소년 출입 제한 여부', iconType: 'stamp', applicableTo: ['ENTERTAINMENT'] },
+  { id: 'youth_protect', category: 'PERMIT', title: '청소년 보호교육', description: '청소년보호 책임자 교육 이수', iconType: 'shield', applicableTo: ['ENTERTAINMENT'] },
+  // 호텔/숙박
+  { id: 'hotel_permit', category: 'PERMIT', title: '숙박업 등록', description: '구청 관광과/위생과, 등급별 기준', iconType: 'stamp', applicableTo: ['HOTEL'] },
+  { id: 'fire_safety', category: 'PERMIT', title: '소방안전 검사', description: '소방시설 완비, 피난안내도', iconType: 'shield', applicableTo: ['HOTEL'] },
+  { id: 'building_use', category: 'PERMIT', title: '건축물 용도 확인', description: '숙박시설 용도 확인/변경', iconType: 'building', applicableTo: ['HOTEL'] },
 
   // ===== 4. 공사/시공 =====
   // 공통
@@ -273,6 +278,13 @@ export const OPEN_PROCESS_TASKS: OpenTaskItem[] = [
   { id: 'plumbing_beauty', category: 'CONSTRUCTION', title: '샴푸대 배관', description: '샴푸대 위치, 배수 설계', iconType: 'droplet', applicableTo: ['BEAUTY'] },
   // 헬스장
   { id: 'shower_room', category: 'CONSTRUCTION', title: '샤워실/탈의실', description: '샤워부스, 락커, 배관', iconType: 'droplet', applicableTo: ['FITNESS'] },
+  // PC방/오락시설
+  { id: 'electric_upgrade', category: 'CONSTRUCTION', title: '전기 증설', description: 'PC 대수에 따른 용량 증설', iconType: 'zap', applicableTo: ['ENTERTAINMENT'] },
+  { id: 'network_infra', category: 'CONSTRUCTION', title: '네트워크 배선', description: '기가 인터넷, LAN 배선, 스위칭 허브', iconType: 'wifi', applicableTo: ['ENTERTAINMENT'] },
+  { id: 'aircon_pc', category: 'CONSTRUCTION', title: '냉방/환기 공사', description: 'PC 발열 대비 냉방/환기', iconType: 'wind', applicableTo: ['ENTERTAINMENT'] },
+  // 호텔/숙박
+  { id: 'room_interior', category: 'CONSTRUCTION', title: '객실 인테리어', description: '객실별 내부 인테리어, 방음', iconType: 'paint', applicableTo: ['HOTEL'] },
+  { id: 'bathroom', category: 'CONSTRUCTION', title: '욕실 시공', description: '객실별 샤워시설, 배관', iconType: 'droplet', applicableTo: ['HOTEL'] },
 
   // ===== 5. 집기/장비 =====
   // 공통
@@ -302,6 +314,11 @@ export const OPEN_PROCESS_TASKS: OpenTaskItem[] = [
   // 소매
   { id: 'display_shelf', category: 'EQUIPMENT', title: '진열대/선반', description: '상품 진열, 곤돌라', iconType: 'box', applicableTo: ['RETAIL'] },
   { id: 'showcase', category: 'EQUIPMENT', title: '쇼케이스/냉장고', description: '상품 보관, 냉장 진열', iconType: 'box', applicableTo: ['RETAIL'] },
+  // 호텔/숙박
+  { id: 'room_furniture', category: 'EQUIPMENT', title: '객실 가구', description: '침대, 옷장, TV, 테이블', iconType: 'armchair', applicableTo: ['HOTEL'] },
+  { id: 'bedding', category: 'EQUIPMENT', title: '침구류', description: '이불, 베개, 시트 (교체용 여분)', iconType: 'box', applicableTo: ['HOTEL'] },
+  { id: 'amenities', category: 'EQUIPMENT', title: '어메니티', description: '샴푸, 칫솔, 타월, 슬리퍼', iconType: 'box', applicableTo: ['HOTEL'] },
+  { id: 'door_lock', category: 'EQUIPMENT', title: '객실 도어락', description: '카드키/번호 도어락', iconType: 'shield', applicableTo: ['HOTEL'] },
 
   // ===== 6. 시스템 세팅 =====
   // 공통
@@ -323,6 +340,11 @@ export const OPEN_PROCESS_TASKS: OpenTaskItem[] = [
   // 소매
   { id: 'inventory_system', category: 'SYSTEM', title: '재고관리 시스템', description: '바코드, 재고 관리', iconType: 'clipboard', applicableTo: ['RETAIL'] },
   { id: 'supplier_contract', category: 'SYSTEM', title: '도매처 계약', description: '상품 공급 계약', iconType: 'truck', applicableTo: ['RETAIL'] },
+  // PC방/오락시설
+  { id: 'pcroom_mgmt', category: 'SYSTEM', title: 'PC방 관리 프로그램', description: '사이버플러스/아이카페 등 솔루션', iconType: 'tablet', applicableTo: ['ENTERTAINMENT'] },
+  // 호텔/숙박
+  { id: 'front_system', category: 'SYSTEM', title: '프론트 시스템', description: '객실관리, 예약관리 PMS', iconType: 'tablet', applicableTo: ['HOTEL'] },
+  { id: 'laundry_contract', category: 'SYSTEM', title: '린넨 세탁 계약', description: '침구, 타월 세탁 업체', iconType: 'truck', applicableTo: ['HOTEL'] },
 
   // ===== 7. 인력/운영 =====
   // 공통
@@ -338,6 +360,9 @@ export const OPEN_PROCESS_TASKS: OpenTaskItem[] = [
   { id: 'trainer_cert', category: 'OPERATION', title: '트레이너 자격', description: '퍼스널트레이너, 필라테스 자격', iconType: 'users', applicableTo: ['FITNESS'] },
   // 교육
   { id: 'teacher_hire', category: 'OPERATION', title: '강사 채용', description: '과목별 강사, 자격 확인', iconType: 'users', applicableTo: ['EDUCATION'] },
+  // 호텔/숙박
+  { id: 'housekeeping', category: 'OPERATION', title: '하우스키핑', description: '객실 청소 인력/업체 계약', iconType: 'users', applicableTo: ['HOTEL'] },
+  { id: 'front_staff', category: 'OPERATION', title: '프론트 직원', description: '체크인/아웃 응대 인력', iconType: 'users', applicableTo: ['HOTEL'] },
 
   // ===== 8. 오픈/마케팅 =====
   // 공통
@@ -353,6 +378,8 @@ export const OPEN_PROCESS_TASKS: OpenTaskItem[] = [
   { id: 'student_recruit', category: 'MARKETING', title: '수강생 모집', description: '홍보, 상담, 등록', iconType: 'users', applicableTo: ['EDUCATION'] },
   // 헬스
   { id: 'member_recruit', category: 'MARKETING', title: '회원 모집', description: '오픈 이벤트, 회원권 판매', iconType: 'users', applicableTo: ['FITNESS'] },
+  // 호텔/숙박
+  { id: 'ota_register', category: 'MARKETING', title: 'OTA 입점', description: '야놀자, 여기어때, 부킹닷컴 등록', iconType: 'tablet', applicableTo: ['HOTEL'] },
 ];
 
 // 업종별 체크리스트 필터 헬퍼 함수
@@ -374,7 +401,9 @@ export const getTasksForBusinessType = (businessType: string): OpenTaskItem[] =>
     // 교육
     'EDUCATION': 'EDUCATION', 'STUDY': 'EDUCATION', 'ACADEMY_STUDY': 'EDUCATION',
     // 오락
-    'ENTERTAINMENT': 'ENTERTAINMENT', 'PC': 'ENTERTAINMENT', 'ARCADE': 'ENTERTAINMENT', 'KARAOKE': 'ENTERTAINMENT',
+    'ENTERTAINMENT': 'ENTERTAINMENT', 'PC': 'ENTERTAINMENT', 'ARCADE': 'ENTERTAINMENT', 'KARAOKE': 'ENTERTAINMENT', 'pcroom': 'ENTERTAINMENT',
+    // 호텔/숙박
+    'HOTEL': 'HOTEL', 'hotel': 'HOTEL', 'MOTEL': 'HOTEL', 'GUESTHOUSE': 'HOTEL', 'PENSION': 'HOTEL',
     // 사무실
     'OFFICE': 'OFFICE', 'COWORKING': 'OFFICE',
   };

@@ -207,7 +207,8 @@ export type BusinessCategoryType =
   | 'BEAUTY'        // 미용 (헤어, 네일, 피부)
   | 'FITNESS'       // 헬스/필라테스
   | 'EDUCATION'     // 학원/교육
-  | 'ENTERTAINMENT' // PC방/오락
+  | 'ENTERTAINMENT' // PC방/오락시설
+  | 'HOTEL'         // 호텔/숙박시설
   | 'OFFICE'        // 사무실
   | 'OTHER';        // 기타
 

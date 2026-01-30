@@ -74,6 +74,8 @@ const BUSINESS_CATEGORIES = [
   { id: 'beauty', label: '미용/뷰티', icon: Scissors, color: 'bg-pink-100 text-pink-700' },
   { id: 'fitness', label: '헬스/운동', icon: Dumbbell, color: 'bg-green-100 text-green-700' },
   { id: 'education', label: '교육/학원', icon: GraduationCap, color: 'bg-indigo-100 text-indigo-700' },
+  { id: 'pcroom', label: 'PC방/오락시설', icon: Monitor, color: 'bg-cyan-100 text-cyan-700' },
+  { id: 'hotel', label: '호텔/숙박', icon: Building, color: 'bg-rose-100 text-rose-700' },
   { id: 'office', label: '사무실', icon: Briefcase, color: 'bg-slate-100 text-slate-700' },
   { id: 'etc', label: '기타', icon: MoreHorizontal, color: 'bg-gray-100 text-gray-700' },
 ];
@@ -253,6 +255,40 @@ const CHECKLIST_BY_CATEGORY: Record<string, Omit<ChecklistItem, 'status'>[]> = {
     { id: 'office_furniture', category: '장비', title: '사무용 가구', description: '책상, 의자, 수납장', icon: Armchair, estimatedCost: { min: 200, max: 800, unit: '만원' }, isRequired: true },
     { id: 'meeting_room', category: '장비', title: '회의실 세팅', description: '회의 테이블, 프로젝터', icon: Users, estimatedCost: { min: 100, max: 400, unit: '만원' }, isRequired: false },
     { id: 'network', category: '운영 준비', title: '네트워크/전화', description: '인터넷, 전화 설치', icon: Wifi, estimatedCost: { min: 30, max: 100, unit: '만원' }, isRequired: true },
+  ],
+
+  // PC방
+  pcroom: [
+    { id: 'game_biz_reg', category: '인허가/행정', title: '게임제공업 등록', description: '구청 문화체육과 (영업시간 제한 확인)', icon: BookOpen, estimatedCost: { min: 0, max: 10, unit: '만원' }, isRequired: true },
+    { id: 'youth_protect', category: '인허가/행정', title: '청소년 보호 교육', description: '청소년보호 책임자 교육 이수', icon: Shield, estimatedCost: { min: 2, max: 5, unit: '만원' }, isRequired: true },
+    { id: 'fire_safety', category: '인허가/행정', title: '소방시설 완비증명', description: '소방서 발급 (50석 이상 필수)', icon: Shield, estimatedCost: { min: 0, max: 50, unit: '만원' }, isRequired: true },
+    { id: 'electric_upgrade', category: '시설/공사', title: '전기 증설', description: 'PC 대수에 따른 용량 증설 (필수!)', icon: Lightbulb, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'network_infra', category: '시설/공사', title: '네트워크 구축', description: '기가 인터넷, LAN 배선, 스위칭 허브', icon: Wifi, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'aircon', category: '시설/공사', title: '에어컨/환기', description: 'PC 발열 대비 냉방/환기 필수', icon: Wind, estimatedCost: { min: 300, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'pc_setup', category: '장비', title: 'PC/모니터', description: '게이밍 PC, 144Hz 모니터 (50대 기준)', icon: Monitor, estimatedCost: { min: 5000, max: 10000, unit: '만원' }, isRequired: true },
+    { id: 'gaming_chair', category: '장비', title: '게이밍 체어/책상', description: '인체공학 의자, PC방 전용 책상', icon: Armchair, estimatedCost: { min: 500, max: 1500, unit: '만원' }, isRequired: true },
+    { id: 'peripherals', category: '장비', title: '키보드/마우스/헤드셋', description: '게이밍 기어 (파손 대비 여분 필수)', icon: Box, estimatedCost: { min: 300, max: 800, unit: '만원' }, isRequired: true },
+    { id: 'game_license', category: '시스템 세팅', title: '게임 라이선스', description: 'PC방 전용 게임 라이선스 계약', icon: FileText, estimatedCost: { min: 50, max: 150, unit: '월 만원' }, isRequired: true },
+    { id: 'pcroom_system', category: '시스템 세팅', title: 'PC방 관리 프로그램', description: '사이버플러스/아이카페 등 관리솔루션', icon: Monitor, estimatedCost: { min: 100, max: 300, unit: '만원' }, isRequired: true },
+    { id: 'food_corner', category: '부가 서비스', title: '스낵코너/음료', description: '자판기, 라면기, 음료 냉장고', icon: Coffee, estimatedCost: { min: 200, max: 500, unit: '만원' }, isRequired: false },
+  ],
+
+  // 호텔/숙박시설
+  hotel: [
+    { id: 'hotel_biz_reg', category: '인허가/행정', title: '숙박업 등록', description: '구청 관광과/위생과 (등급별 기준 상이)', icon: BookOpen, estimatedCost: { min: 10, max: 50, unit: '만원' }, isRequired: true },
+    { id: 'fire_safety', category: '인허가/행정', title: '소방안전 검사', description: '소방시설 완비, 피난안내도 설치', icon: Shield, estimatedCost: { min: 100, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'building_permit', category: '인허가/행정', title: '건축물 용도 변경', description: '숙박시설 용도 확인/변경', icon: Building, estimatedCost: { min: 0, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'hygiene_check', category: '인허가/행정', title: '위생점검 준비', description: '객실별 욕실, 환기, 채광 기준', icon: Shield, estimatedCost: { min: 0, max: 0, unit: '점검' }, isRequired: true },
+    { id: 'room_interior', category: '시설/공사', title: '객실 인테리어', description: '객실 내부 인테리어, 방음', icon: PaintBucket, estimatedCost: { min: 200, max: 500, unit: '객실당 만원' }, isRequired: true },
+    { id: 'bathroom', category: '시설/공사', title: '욕실 시공', description: '객실별 샤워시설, 배관', icon: Store, estimatedCost: { min: 150, max: 400, unit: '객실당 만원' }, isRequired: true },
+    { id: 'room_furniture', category: '장비', title: '객실 가구', description: '침대, 옷장, TV, 테이블', icon: Armchair, estimatedCost: { min: 100, max: 300, unit: '객실당 만원' }, isRequired: true },
+    { id: 'bedding', category: '장비', title: '침구류', description: '이불, 베개, 시트 (교체용 여분)', icon: Box, estimatedCost: { min: 30, max: 100, unit: '객실당 만원' }, isRequired: true },
+    { id: 'amenities', category: '장비', title: '어메니티', description: '샴푸, 칫솔, 타월, 슬리퍼', icon: Package, estimatedCost: { min: 5, max: 20, unit: '객실당 만원' }, isRequired: true },
+    { id: 'front_system', category: '시스템 세팅', title: '프론트 시스템', description: '객실관리, 예약관리 PMS', icon: Monitor, estimatedCost: { min: 100, max: 500, unit: '만원' }, isRequired: true },
+    { id: 'door_lock', category: '시스템 세팅', title: '객실 도어락', description: '카드키/번호 도어락', icon: Shield, estimatedCost: { min: 20, max: 50, unit: '객실당 만원' }, isRequired: true },
+    { id: 'ota_register', category: '오픈/마케팅', title: 'OTA 입점', description: '야놀자, 여기어때, 부킹닷컴 등록', icon: Target, estimatedCost: { min: 0, max: 0, unit: '수수료' }, isRequired: true },
+    { id: 'cleaning_staff', category: '인력/운영', title: '청소/하우스키핑', description: '객실 청소 인력/업체 계약', icon: Users, estimatedCost: { min: 0, max: 0, unit: '인건비' }, isRequired: true },
+    { id: 'laundry', category: '인력/운영', title: '린넨 세탁 계약', description: '침구, 타월 세탁 업체', icon: Truck, estimatedCost: { min: 0, max: 0, unit: '업체 연결' }, isRequired: true },
   ],
 
   // 기타 (default)
