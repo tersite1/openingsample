@@ -34,7 +34,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
   
   // Detail Modal State
   const [selectedPackageDetail, setSelectedPackageDetail] = useState<Package | null>(null);
-  
+
+  // Category Action Modal
+  const [showCategoryAction, setShowCategoryAction] = useState(false);
+
   // Wishlist & Compare State (Mock)
   const [wishlist, setWishlist] = useState<Set<string>>(new Set());
   const [compareList, setCompareList] = useState<Set<string>>(new Set());
@@ -72,10 +75,15 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const handleMajorSelect = (cat: CategoryNode) => {
     if (selectedMajor?.id === cat.id) {
         resetSelection();
+        setShowCategoryAction(false);
     } else {
         setSelectedMajor(cat);
         setSelectedMiddle(null);
         setSelectedMinor(null);
+        // 하위 카테고리 없으면 바로 액션 모달 표시
+        if (!cat.children || cat.children.length === 0) {
+          setShowCategoryAction(true);
+        }
     }
   };
 
@@ -83,18 +91,32 @@ export const HomeView: React.FC<HomeViewProps> = ({
       if (selectedMiddle?.id === cat.id) {
           setSelectedMiddle(null);
           setSelectedMinor(null);
+          setShowCategoryAction(false);
       } else {
           setSelectedMiddle(cat);
           setSelectedMinor(null);
+          // 하위 카테고리 없으면 바로 액션 모달 표시
+          if (!cat.children || cat.children.length === 0) {
+            setShowCategoryAction(true);
+          }
       }
   };
 
   const handleMinorSelect = (cat: CategoryNode) => {
       if (selectedMinor?.id === cat.id) {
           setSelectedMinor(null);
+          setShowCategoryAction(false);
       } else {
           setSelectedMinor(cat);
+          setShowCategoryAction(true);
       }
+  };
+
+  const getSelectedCategoryLabel = () => {
+    if (selectedMinor) return selectedMinor.label;
+    if (selectedMiddle) return selectedMiddle.label;
+    if (selectedMajor) return selectedMajor.label;
+    return '';
   };
 
   const toggleWishlist = (id: string, e: React.MouseEvent) => {
@@ -617,6 +639,86 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
       {/* Detail Modal */}
       {selectedPackageDetail && renderDetailView()}
+
+      {/* Category Action Modal */}
+      {showCategoryAction && (selectedMajor || selectedMiddle || selectedMinor) && (
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center animate-fade-in">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowCategoryAction(false)} />
+          <div className="relative bg-white w-full max-w-md rounded-t-3xl md:rounded-2xl p-6 animate-slide-up">
+            <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4 md:hidden" />
+
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-brand-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                {selectedMajor?.icon && <selectedMajor.icon size={32} className="text-brand-600" />}
+              </div>
+              <h3 className="text-xl font-bold text-slate-900">{getSelectedCategoryLabel()}</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                {getSelectedCategoryLabel()} 창업을 준비하고 계시나요?
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setShowCategoryAction(false);
+                  onStartNewProject?.();
+                }}
+                className="w-full flex items-center justify-between p-4 bg-brand-600 hover:bg-brand-700 text-white rounded-xl transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <Rocket size={24} />
+                  <div className="text-left">
+                    <p className="font-bold">창업 상담 시작하기</p>
+                    <p className="text-sm text-brand-100">예상 비용부터 PM 배정까지</p>
+                  </div>
+                </div>
+                <ChevronRight size={20} />
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowCategoryAction(false);
+                  // 매물 목록이 필터링되어 보여짐
+                }}
+                className="w-full flex items-center justify-between p-4 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-xl transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <Box size={24} className="text-slate-600" />
+                  <div className="text-left">
+                    <p className="font-bold">추천 매물 보기</p>
+                    <p className="text-sm text-gray-500">{filteredListings.length}개의 매물</p>
+                  </div>
+                </div>
+                <ChevronRight size={20} className="text-slate-400" />
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowCategoryAction(false);
+                  onConsultingClick();
+                }}
+                className="w-full flex items-center justify-between p-4 bg-white border border-gray-200 hover:border-brand-300 hover:bg-brand-50 rounded-xl transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <MessageCircle size={24} className="text-gray-500" />
+                  <div className="text-left">
+                    <p className="font-bold text-gray-700">무료 상담 신청</p>
+                    <p className="text-sm text-gray-500">전문 상담사와 1:1 상담</p>
+                  </div>
+                </div>
+                <ChevronRight size={20} className="text-gray-400" />
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShowCategoryAction(false)}
+              className="w-full mt-4 py-3 text-gray-500 font-medium hover:text-gray-700"
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
