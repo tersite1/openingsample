@@ -384,28 +384,49 @@ export const OPEN_PROCESS_TASKS: OpenTaskItem[] = [
 
 // 업종별 체크리스트 필터 헬퍼 함수
 export const getTasksForBusinessType = (businessType: string): OpenTaskItem[] => {
-  // 업종 매핑 (CATEGORY_TREE의 id -> BusinessCategoryType)
+  // 업종 매핑 (CATEGORY_TREE의 id 및 한글 라벨 -> BusinessCategoryType)
   const categoryMapping: Record<string, string> = {
-    // 음식/외식
+    // 음식/외식 (영문 ID)
     'FOOD': 'FOOD', 'KOREAN': 'FOOD', 'JAPANESE': 'FOOD', 'CHINESE': 'FOOD',
     'WESTERN': 'FOOD', 'BUNSIK': 'FOOD', 'CHICKEN': 'FOOD', 'FASTFOOD': 'FOOD',
     'PUB': 'FOOD', 'FUSION': 'FOOD', 'SEAFOOD': 'FOOD', 'BUFFET': 'FOOD',
-    // 카페
-    'CAFE': 'CAFE', 'BAKERY': 'CAFE',
-    // 소매
-    'RETAIL': 'RETAIL', 'CVS': 'RETAIL', 'GROCERY': 'RETAIL',
-    // 미용
-    'BEAUTY': 'BEAUTY', 'HAIR': 'BEAUTY', 'SKIN': 'BEAUTY', 'NAIL': 'BEAUTY',
-    // 헬스
-    'FITNESS': 'FITNESS', 'PILATES': 'FITNESS', 'MASSAGE': 'FITNESS',
-    // 교육
-    'EDUCATION': 'EDUCATION', 'STUDY': 'EDUCATION', 'ACADEMY_STUDY': 'EDUCATION',
-    // 오락
+    'restaurant': 'FOOD', 'chicken': 'FOOD', 'pub': 'FOOD',
+    // 음식/외식 (한글 라벨)
+    '음식점': 'FOOD', '치킨/분식': 'FOOD', '주점/바': 'FOOD', '한식': 'FOOD', '일식': 'FOOD', '중식': 'FOOD', '양식': 'FOOD',
+    // 카페 (영문 ID)
+    'CAFE': 'CAFE', 'BAKERY': 'CAFE', 'cafe': 'CAFE',
+    // 카페 (한글 라벨)
+    '카페/디저트': 'CAFE', '카페': 'CAFE', '베이커리': 'CAFE', '디저트': 'CAFE',
+    // 소매 (영문 ID)
+    'RETAIL': 'RETAIL', 'CVS': 'RETAIL', 'GROCERY': 'RETAIL', 'retail': 'RETAIL',
+    // 소매 (한글 라벨)
+    '소매/편의점': 'RETAIL', '편의점': 'RETAIL', '소매': 'RETAIL',
+    // 미용 (영문 ID)
+    'BEAUTY': 'BEAUTY', 'HAIR': 'BEAUTY', 'SKIN': 'BEAUTY', 'NAIL': 'BEAUTY', 'beauty': 'BEAUTY',
+    // 미용 (한글 라벨)
+    '미용/뷰티': 'BEAUTY', '미용실': 'BEAUTY', '헤어샵': 'BEAUTY', '네일샵': 'BEAUTY', '피부관리': 'BEAUTY',
+    // 헬스 (영문 ID)
+    'FITNESS': 'FITNESS', 'PILATES': 'FITNESS', 'MASSAGE': 'FITNESS', 'fitness': 'FITNESS',
+    // 헬스 (한글 라벨)
+    '헬스/운동': 'FITNESS', '헬스장': 'FITNESS', '필라테스': 'FITNESS', '요가': 'FITNESS', '피트니스': 'FITNESS',
+    // 교육 (영문 ID)
+    'EDUCATION': 'EDUCATION', 'STUDY': 'EDUCATION', 'ACADEMY_STUDY': 'EDUCATION', 'education': 'EDUCATION',
+    // 교육 (한글 라벨)
+    '교육/학원': 'EDUCATION', '학원': 'EDUCATION', '스터디카페': 'EDUCATION',
+    // 오락 (영문 ID)
     'ENTERTAINMENT': 'ENTERTAINMENT', 'PC': 'ENTERTAINMENT', 'ARCADE': 'ENTERTAINMENT', 'KARAOKE': 'ENTERTAINMENT', 'pcroom': 'ENTERTAINMENT',
-    // 호텔/숙박
+    // 오락 (한글 라벨)
+    'PC방/오락시설': 'ENTERTAINMENT', 'PC방': 'ENTERTAINMENT', '오락실': 'ENTERTAINMENT', '노래방': 'ENTERTAINMENT',
+    // 호텔/숙박 (영문 ID)
     'HOTEL': 'HOTEL', 'hotel': 'HOTEL', 'MOTEL': 'HOTEL', 'GUESTHOUSE': 'HOTEL', 'PENSION': 'HOTEL',
-    // 사무실
-    'OFFICE': 'OFFICE', 'COWORKING': 'OFFICE',
+    // 호텔/숙박 (한글 라벨)
+    '호텔/숙박': 'HOTEL', '호텔': 'HOTEL', '모텔': 'HOTEL', '펜션': 'HOTEL', '게스트하우스': 'HOTEL',
+    // 사무실 (영문 ID)
+    'OFFICE': 'OFFICE', 'COWORKING': 'OFFICE', 'office': 'OFFICE',
+    // 사무실 (한글 라벨)
+    '사무실': 'OFFICE', '코워킹스페이스': 'OFFICE',
+    // 기타
+    '기타': 'OTHER', 'etc': 'OTHER', 'OTHER': 'OTHER',
   };
 
   const mappedType = categoryMapping[businessType] || 'OTHER';
