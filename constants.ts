@@ -4,17 +4,99 @@ import {
   Stethoscope, Gamepad2, Building2, Car, BedDouble 
 } from 'lucide-react';
 
-// 1. 업종 카테고리 트리
+// 1. 업종 카테고리 트리 (확장판)
 export const CATEGORY_TREE: CategoryNode[] = [
   {
     id: 'FOOD',
     label: '음식·외식',
     icon: Utensils,
     children: [
-      { id: 'CAFE', label: '카페/디저트', children: [{ id: 'cafe_small', label: '개인카페' }, { id: 'cafe_fran', label: '프랜차이즈' }, { id: 'bakery', label: '베이커리' }] },
-      { id: 'PUB', label: '주점/호프', children: [{ id: 'pub_Izakaya', label: '이자카야' }, { id: 'pub_poch', label: '포차' }, { id: 'pub_bar', label: '바(Bar)' }] },
-      { id: 'CHICKEN', label: '치킨/피자', children: [] },
-      { id: 'KOREAN', label: '한식/분식', children: [] },
+      { id: 'KOREAN', label: '한식', children: [
+        { id: 'korean_soup', label: '국물요리/탕' },
+        { id: 'korean_meat', label: '고기구이/육회' },
+        { id: 'korean_pork', label: '삼겹살/돼지갈비' },
+        { id: 'korean_beef', label: '소갈비/정육식당' },
+        { id: 'korean_chicken', label: '닭요리/닭갈비' },
+        { id: 'korean_bossam', label: '보쌈/족발' },
+        { id: 'korean_sundae', label: '순대/곱창' },
+        { id: 'korean_rice', label: '비빔밥/돌솥밥' },
+        { id: 'korean_stew', label: '찌개류' },
+        { id: 'korean_set', label: '한정식/백반' },
+      ]},
+      { id: 'JAPANESE', label: '일식', children: [
+        { id: 'jp_general', label: '일식 전문점' },
+        { id: 'jp_donkatsu', label: '돈까스/카레' },
+        { id: 'jp_ramen', label: '라멘/우동/소바' },
+        { id: 'jp_sushi', label: '초밥' },
+        { id: 'jp_izakaya', label: '이자카야' },
+      ]},
+      { id: 'CHINESE', label: '중식', children: [
+        { id: 'cn_general', label: '일반 중식당' },
+        { id: 'cn_mala', label: '마라/양꼬치/훠궈' },
+        { id: 'cn_tangsuyuk', label: '탕수육' },
+        { id: 'cn_jjamppong', label: '짬뽕' },
+      ]},
+      { id: 'WESTERN', label: '양식', children: [
+        { id: 'west_family', label: '패밀리 레스토랑' },
+        { id: 'west_italian', label: '이탈리안/파스타' },
+        { id: 'west_steak', label: '스테이크' },
+        { id: 'west_bbq', label: '바비큐' },
+      ]},
+      { id: 'BUNSIK', label: '분식/국수', children: [
+        { id: 'bunsik_general', label: '분식 전문점' },
+        { id: 'bunsik_noodle', label: '칼국수/면' },
+        { id: 'bunsik_mandu', label: '만두/수제비' },
+        { id: 'bunsik_naengmyeon', label: '냉면' },
+      ]},
+      { id: 'CHICKEN', label: '치킨/피자', children: [
+        { id: 'chicken_general', label: '치킨 전문점' },
+        { id: 'pizza_general', label: '피자 전문점' },
+      ]},
+      { id: 'FASTFOOD', label: '패스트푸드', children: [
+        { id: 'fast_burger', label: '버거 전문점' },
+        { id: 'fast_sandwich', label: '샌드위치/토스트/핫도그' },
+        { id: 'fast_donut', label: '도넛/꽈배기/호떡' },
+        { id: 'fast_salad', label: '샐러드/다이어트' },
+        { id: 'fast_lunchbox', label: '도시락/컵밥' },
+        { id: 'fast_tanghuru', label: '탕후루' },
+      ]},
+      { id: 'CAFE', label: '카페/커피/찻집', children: [
+        { id: 'cafe_coffee', label: '커피 전문점' },
+        { id: 'cafe_dessert', label: '카페/디저트' },
+        { id: 'cafe_takeout', label: '테이크아웃 음료' },
+        { id: 'cafe_tea', label: '전통찻집' },
+      ]},
+      { id: 'BAKERY', label: '제과제빵', children: [
+        { id: 'bakery_bread', label: '제과/제빵' },
+        { id: 'bakery_cake', label: '케이크' },
+        { id: 'bakery_tteok', label: '떡/한과' },
+      ]},
+      { id: 'PUB', label: '주점', children: [
+        { id: 'pub_pocha', label: '포장마차/소주방' },
+        { id: 'pub_hof', label: '호프/맥주' },
+        { id: 'pub_wine', label: '와인/칵테일/위스키 바' },
+        { id: 'pub_izakaya', label: '이자까야/꼬치구이' },
+        { id: 'pub_bar', label: '바/라운지' },
+      ]},
+      { id: 'FUSION', label: '퓨전/세계요리', children: [
+        { id: 'fusion_general', label: '퓨전음식' },
+        { id: 'fusion_viet', label: '베트남음식' },
+        { id: 'fusion_thai', label: '태국음식' },
+        { id: 'fusion_india', label: '인도음식' },
+      ]},
+      { id: 'SEAFOOD', label: '수산물', children: [
+        { id: 'sea_sashimi', label: '회/수산물' },
+        { id: 'sea_tuna', label: '참치' },
+        { id: 'sea_eel', label: '장어' },
+        { id: 'sea_crab', label: '게요리/대게' },
+        { id: 'sea_shell', label: '조개구이/조개찜' },
+        { id: 'sea_octopus', label: '낙지/문어/쭈꾸미' },
+      ]},
+      { id: 'BUFFET', label: '뷔페', children: [
+        { id: 'buffet_general', label: '종합 뷔페' },
+        { id: 'buffet_meat', label: '고기 뷔페' },
+        { id: 'buffet_seafood', label: '해물 뷔페' },
+      ]},
     ]
   },
   {
@@ -23,16 +105,60 @@ export const CATEGORY_TREE: CategoryNode[] = [
     icon: ShoppingBag,
     children: [
       { id: 'CVS', label: '편의점/마트', children: [] },
-      { id: 'CLOTHES', label: '의류/잡화', children: [] },
+      { id: 'GROCERY', label: '음식료품', children: [] },
+      { id: 'HEALTH_FOOD', label: '건강식품', children: [] },
+      { id: 'BABY', label: '유아용품', children: [] },
+      { id: 'COSMETIC', label: '화장품', children: [] },
+      { id: 'CLOTHES', label: '의류/패션', children: [] },
+      { id: 'BAG_SHOES', label: '가방/신발/액세서리', children: [] },
+      { id: 'SPORTS', label: '운동/스포츠용품', children: [] },
+      { id: 'BOOK', label: '서점', children: [] },
+      { id: 'GIFT', label: '선물/팬시/기념품', children: [] },
+      { id: 'FLOWER', label: '꽃/식물/화초', children: [] },
+      { id: 'OPTIC', label: '안경점', children: [] },
+      { id: 'JEWELRY', label: '시계/귀금속', children: [] },
+      { id: 'FURNITURE', label: '가구', children: [] },
+      { id: 'OFFICE_SUPPLY', label: '사무/문구', children: [] },
+      { id: 'HOME_INT', label: '가정/주방/인테리어', children: [] },
+      { id: 'ELECTRONICS', label: '가전제품', children: [] },
+      { id: 'PET', label: '애견/애완용품', children: [] },
+      { id: 'PHARMACY', label: '의약/의료품', children: [] },
     ]
   },
   {
-    id: 'BEAUTY',
-    label: '뷰티·서비스',
+    id: 'SERVICE',
+    label: '서비스',
     icon: Scissors,
     children: [
-      { id: 'HAIR', label: '헤어샵', children: [] },
+      { id: 'LAUNDRY', label: '세탁/빨래', children: [] },
+      { id: 'CLEANING', label: '청소/가사', children: [] },
+      { id: 'REPAIR', label: '개인/가정용품 수리', children: [] },
+      { id: 'SAUNA', label: '목욕탕/사우나/찜질방', children: [] },
+      { id: 'HAIR', label: '헤어/이발/미용', children: [] },
+      { id: 'SKIN', label: '피부/체형관리', children: [] },
       { id: 'NAIL', label: '네일/속눈썹', children: [] },
+      { id: 'RENTAL_CAR', label: '렌터카', children: [] },
+      { id: 'AUTO_SERVICE', label: '자동차/이륜차 정비', children: [] },
+      { id: 'DELIVERY', label: '운송/배달/택배', children: [] },
+      { id: 'PHOTO', label: '사진/스튜디오', children: [] },
+      { id: 'PRINT', label: '광고/인쇄', children: [] },
+      { id: 'WEDDING', label: '예식/의례', children: [] },
+      { id: 'EVENT', label: '행사/이벤트', children: [] },
+    ]
+  },
+  {
+    id: 'ENTERTAINMENT',
+    label: '오락·여가',
+    icon: Gamepad2,
+    children: [
+      { id: 'PC', label: 'PC방', children: [] },
+      { id: 'ARCADE', label: '오락/당구/볼링', children: [] },
+      { id: 'KARAOKE', label: '노래방/멀티방', children: [] },
+      { id: 'FITNESS', label: '헬스클럽/스포츠센터', children: [] },
+      { id: 'PILATES', label: '필라테스/요가', children: [] },
+      { id: 'MASSAGE', label: '마사지/스파', children: [] },
+      { id: 'THEATER', label: '연극/영화/극장', children: [] },
+      { id: 'EXHIBITION', label: '전시/관람', children: [] },
     ]
   },
   {
@@ -40,78 +166,88 @@ export const CATEGORY_TREE: CategoryNode[] = [
     label: '교육·학습',
     icon: GraduationCap,
     children: [
-      { id: 'STUDY', label: '스터디카페', children: [] },
-      { id: 'ACADEMY', label: '학원/교습소', children: [] },
+      { id: 'STUDY', label: '도서관/독서실/스터디카페', children: [] },
+      { id: 'KINDERGARTEN', label: '유아교육', children: [] },
+      { id: 'ACADEMY_STUDY', label: '학원-보습/입시', children: [] },
+      { id: 'ACADEMY_LANG', label: '학원-어학', children: [] },
+      { id: 'ACADEMY_ART', label: '학원-음악/미술/무용', children: [] },
+      { id: 'ACADEMY_SPORTS', label: '학원-예능/취미/체육', children: [] },
+      { id: 'ACADEMY_CERT', label: '학원-자격/국가고시', children: [] },
+      { id: 'ACADEMY_JOB', label: '학원-창업/취업', children: [] },
     ]
   },
   {
-    id: 'HEALTH',
-    label: '의료·건강',
-    icon: Stethoscope,
+    id: 'LODGING',
+    label: '숙박',
+    icon: BedDouble,
     children: [
-      { id: 'FITNESS', label: '헬스/PT' },
-      { id: 'PILATES', label: '필라테스' }
+      { id: 'HOTEL', label: '호텔', children: [] },
+      { id: 'MOTEL', label: '모텔', children: [] },
+      { id: 'PENSION', label: '펜션/민박', children: [] },
+      { id: 'GUESTHOUSE', label: '게스트하우스', children: [] },
     ]
   },
   {
-    id: 'ENTERTAINMENT',
-    label: '엔터·PC',
-    icon: Gamepad2,
+    id: 'AUTO',
+    label: '자동차',
+    icon: Car,
     children: [
-      { id: 'PC', label: 'PC방', children: [] },
-      { id: 'KARAOKE', label: '노래방', children: [] },
+      { id: 'CAR_WASH', label: '세차장', children: [] },
+      { id: 'CAR_REPAIR', label: '정비소', children: [] },
+      { id: 'CAR_PARTS', label: '부품/용품', children: [] },
     ]
   },
   {
     id: 'OFFICE',
     label: '사무·오피스',
     icon: Building2,
-    children: []
-  },
-  {
-    id: 'AUTO',
-    label: '자동차',
-    icon: Car,
-    children: []
-  },
-  {
-    id: 'LODGING',
-    label: '숙박·기타',
-    icon: BedDouble,
-    children: []
+    children: [
+      { id: 'COWORKING', label: '공유오피스', children: [] },
+      { id: 'OFFICE_RENTAL', label: '사무실 임대', children: [] },
+    ]
   }
 ];
 
 // 2. 오픈 프로세스 태스크 (체크리스트용) - [최신 기획 반영]
 export const OPEN_TASK_CATEGORIES: OpenTaskCategory[] = [
+  { id: 'CONSULTING', label: '컨설팅', description: '입지 분석부터 예산 진단까지' },
   { id: 'CONSTRUCTION', label: '공사/정리', description: '철거부터 인테리어, 청소까지' },
   { id: 'OPERATION', label: '운영 준비', description: '매장 운영 필수 인프라' },
-  { id: 'INFO', label: '입지/정보', description: '상권 분석과 필수 지식' },
   { id: 'OPENING_LITE', label: '오프닝 패키지', description: '비용 절감의 핵심 솔루션' },
 ];
 
 export const OPEN_PROCESS_TASKS: OpenTaskItem[] = [
+  // 0. 컨설팅 (입지/분석/예산)
+  { id: 'location_search', category: 'CONSULTING', title: '입지 탐색', description: '업종 기준 상권 적합도, 비교, 리스크 경고', iconType: 'map' },
+  { id: 'location_analysis', category: 'CONSULTING', title: '상권 분석', description: '유동인구, 경쟁업체, 배후수요 분석', iconType: 'chart' },
+  { id: 'permit_guide', category: 'CONSULTING', title: '인허가/행정 가이드', description: '업종별 점포 가능 여부, 불가/주의/추가조건 안내', iconType: 'clipboard' },
+  { id: 'total_cost', category: 'CONSULTING', title: '예상 창업 총액', description: '철거, 원상복구, 보증금/권리금 기회비용 포함', iconType: 'calculator' },
+  { id: 'real_estate', category: 'CONSULTING', title: '부동산 중개', description: '전문 부동산 연결 및 계약 지원', iconType: 'building' },
+
   // 1. 공사/정리
-  { id: 'demolition', category: 'CONSTRUCTION', title: '철거 및 원상복구', description: '폐기물 처리 및 철거', iconType: 'hammer' },
-  { id: 'interior', category: 'CONSTRUCTION', title: '인테리어 시공', description: '업종별 맞춤 시공', iconType: 'paint' },
-  { id: 'signage', category: 'CONSTRUCTION', title: '간판/사인물', description: '내외부 간판 설치', iconType: 'sign' },
+  { id: 'demolition', category: 'CONSTRUCTION', title: '철거', description: '기존 시설 철거 및 폐기물 처리', iconType: 'hammer' },
+  { id: 'restoration', category: 'CONSTRUCTION', title: '원상복구', description: '계약 종료 시 원상복구 리스크 점검', iconType: 'refresh' },
+  { id: 'interior', category: 'CONSTRUCTION', title: '인테리어 시공', description: '업종별 맞춤 설계 및 시공', iconType: 'paint' },
+  { id: 'signage', category: 'CONSTRUCTION', title: '간판/사인물', description: '외부 간판, 내부 사인물, LED 등', iconType: 'sign' },
   { id: 'cleaning', category: 'CONSTRUCTION', title: '전문 청소', description: '준공/입주 딥클리닝', iconType: 'sparkles' },
 
   // 2. 운영 준비
-  { id: 'network', category: 'OPERATION', title: '통신 솔루션', description: '인터넷/CCTV/포스', iconType: 'wifi' },
-  { id: 'insurance', category: 'OPERATION', title: '필수 보험', description: '화재/배상책임 보험', iconType: 'shield' },
-  { id: 'beverage', category: 'OPERATION', title: '음료/주류 도매', description: '주류사 최저가 매칭', iconType: 'wine' },
-  { id: 'delivery', category: 'OPERATION', title: '배달 대행', description: '배달 권역 세팅', iconType: 'bike' },
+  { id: 'internet', category: 'OPERATION', title: '인터넷', description: '업소용 인터넷 설치', iconType: 'wifi' },
+  { id: 'cctv', category: 'OPERATION', title: 'CCTV', description: '보안 카메라 설치 및 모니터링', iconType: 'camera' },
+  { id: 'pos', category: 'OPERATION', title: 'POS/키오스크', description: '결제 시스템 및 주문 단말기', iconType: 'tablet' },
+  { id: 'insurance_fire', category: 'OPERATION', title: '화재 보험', description: '필수 화재 보험 가입', iconType: 'shield' },
+  { id: 'insurance_liability', category: 'OPERATION', title: '배상책임 보험', description: '영업배상책임 보험 가입', iconType: 'shield' },
+  { id: 'beverage', category: 'OPERATION', title: '음료 도매', description: '음료 공급업체 매칭', iconType: 'coffee' },
+  { id: 'liquor', category: 'OPERATION', title: '주류 도매', description: '주류사 최저가 매칭', iconType: 'wine' },
+  { id: 'delivery_setup', category: 'OPERATION', title: '배달 대행', description: '권역 세팅 + 배민/요기요 등 업체 컨택', iconType: 'bike' },
+  { id: 'delivery_photo', category: 'OPERATION', title: '배달 서비스 사진', description: '메뉴 사진 촬영 및 시안 제작', iconType: 'image' },
+  { id: 'menu_photo', category: 'OPERATION', title: '메뉴판/홍보물', description: '메뉴판, 전단지, 현수막 제작', iconType: 'file' },
 
-  // 3. 입지/정보
-  { id: 'find_store', category: 'INFO', title: '점포 찾기', description: '상권 분석 및 매물 추천', iconType: 'map' },
-  { id: 'real_estate', category: 'INFO', title: '부동산 중개', description: '전문 부동산 연결 및 계약 지원', iconType: 'building' },
-  { id: 'owner_guide', category: 'INFO', title: '사장님 필독', description: '인허가/행정 가이드', iconType: 'book' },
-
-  // 4. 오프닝 패키지 (핵심)
+  // 3. 오프닝 패키지 (핵심)
   { id: 'used_package', category: 'OPENING_LITE', title: '중고 가구/집기 패키지', description: 'A급 검수 자재 + 설치', iconType: 'box', isOpeningExclusive: true },
-  { id: 'consulting', category: 'OPENING_LITE', title: '창업 컨설팅', description: '예산/구성 최적화 진단', iconType: 'user', isOpeningExclusive: true },
+  { id: 'consulting_premium', category: 'OPENING_LITE', title: '프리미엄 컨설팅', description: '예산/구성 최적화 1:1 진단', iconType: 'user', isOpeningExclusive: true },
   { id: '3d_link', category: 'OPENING_LITE', title: '3D 인테리어 시안', description: '미리보는 배치 체험', iconType: 'cube', isOpeningExclusive: true },
+  { id: 'turnkey', category: 'OPENING_LITE', title: '턴키 패키지', description: '상담부터 오픈까지 원스톱 솔루션', iconType: 'rocket', isOpeningExclusive: true },
 ];
 
 // Helper to create mock products

@@ -4,7 +4,8 @@ import { OPEN_PROCESS_TASKS, OPEN_TASK_CATEGORIES } from '../constants';
 import { Button, Input, Badge } from './Components';
 import {
   Check, X, ArrowRight, Settings, MapPin, Hammer, ShoppingBag,
-  ShieldCheck, Zap, Box, FileText, Bike, Wine, Upload, Trash2, File as FileIcon, Building2
+  ShieldCheck, Zap, Box, FileText, Bike, Wine, Upload, Trash2, File as FileIcon, Building2,
+  BarChart3, ClipboardList, Calculator, RefreshCw, Camera, Tablet, Coffee, Image, Rocket
 } from 'lucide-react';
 
 interface ConsultingModuleProps {
@@ -109,7 +110,7 @@ export const ConsultingModule: React.FC<ConsultingModuleProps> = ({
     switch (type) {
       case 'hammer': return Hammer;
       case 'paint': return Hammer;
-      case 'sign': return MapPin; 
+      case 'sign': return MapPin;
       case 'sparkles': return ShieldCheck;
       case 'wifi': return Zap;
       case 'shield': return ShieldCheck;
@@ -121,6 +122,16 @@ export const ConsultingModule: React.FC<ConsultingModuleProps> = ({
       case 'box': return Box;
       case 'user': return FileText;
       case 'cube': return Box;
+      case 'chart': return BarChart3;
+      case 'clipboard': return ClipboardList;
+      case 'calculator': return Calculator;
+      case 'refresh': return RefreshCw;
+      case 'camera': return Camera;
+      case 'tablet': return Tablet;
+      case 'coffee': return Coffee;
+      case 'image': return Image;
+      case 'file': return FileText;
+      case 'rocket': return Rocket;
       default: return Check;
     }
   };
