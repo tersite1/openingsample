@@ -208,76 +208,183 @@ export const CATEGORY_TREE: CategoryNode[] = [
   }
 ];
 
-// 2. 오픈 프로세스 태스크 (체크리스트용) - 21개 매장 운영자 체크리스트 기반
+// 2. 오픈 프로세스 태스크 (체크리스트용) - 공통 + 업종별
 export const OPEN_TASK_CATEGORIES: OpenTaskCategory[] = [
-  { id: 'PLANNING', label: '1. 사전 준비', description: '본질 정리, 메뉴 개발, 예산 수립' },
+  { id: 'PLANNING', label: '1. 사전 준비', description: '본질 정리, 예산 수립' },
   { id: 'LOCATION', label: '2. 입지/계약', description: '상권 분석, 부동산 계약' },
-  { id: 'PERMIT', label: '3. 인허가/행정', description: '보건증, 영업신고, 사업자등록' },
+  { id: 'PERMIT', label: '3. 인허가/행정', description: '사업자등록, 각종 신고' },
   { id: 'CONSTRUCTION', label: '4. 공사/시공', description: '철거, 인테리어, 설비' },
-  { id: 'EQUIPMENT', label: '5. 집기/장비', description: '주방 장비, 가구, 집기' },
-  { id: 'SYSTEM', label: '6. 시스템 세팅', description: 'POS, 카드, 통신, 도매' },
-  { id: 'OPERATION', label: '7. 인력/운영', description: '직원 채용, 매뉴얼, 교육' },
-  { id: 'MARKETING', label: '8. 오픈/마케팅', description: 'SNS, 홍보, 오픈 준비' },
+  { id: 'EQUIPMENT', label: '5. 집기/장비', description: '업종별 장비, 가구' },
+  { id: 'SYSTEM', label: '6. 시스템 세팅', description: 'POS, 카드, 통신' },
+  { id: 'OPERATION', label: '7. 인력/운영', description: '직원 채용, 매뉴얼' },
+  { id: 'MARKETING', label: '8. 오픈/마케팅', description: 'SNS, 홍보, 오픈' },
 ];
 
 export const OPEN_PROCESS_TASKS: OpenTaskItem[] = [
-  // 1. 사전 준비 (본질 정리)
-  { id: 'concept', category: 'PLANNING', title: '창업 컨셉 정리', description: '3W(Who, What, Why) 정립, 차별성 확보', iconType: 'lightbulb' },
-  { id: 'menu_dev', category: 'PLANNING', title: '메뉴 개발/확정', description: '원가율, 제조 난이도, 회전률, 플레이팅', iconType: 'utensils' },
-  { id: 'budget_plan', category: 'PLANNING', title: '예산 계획', description: '창업비 50%, 나머지 50%는 버티기용', iconType: 'calculator' },
-  { id: 'market_research', category: 'PLANNING', title: '시장 조사', description: '성공/망한 매장 분석, 경쟁업체 파악', iconType: 'chart' },
+  // ===== 1. 사전 준비 =====
+  // 공통
+  { id: 'concept', category: 'PLANNING', title: '창업 컨셉 정리', description: '3W(Who, What, Why) 정립, 차별성 확보', iconType: 'lightbulb', applicableTo: ['ALL'] },
+  { id: 'budget_plan', category: 'PLANNING', title: '예산 계획', description: '창업비 50%, 나머지 50%는 버티기용', iconType: 'calculator', applicableTo: ['ALL'] },
+  { id: 'market_research', category: 'PLANNING', title: '시장 조사', description: '성공/망한 매장 분석, 경쟁업체 파악', iconType: 'chart', applicableTo: ['ALL'] },
+  // 음식점/카페
+  { id: 'menu_dev', category: 'PLANNING', title: '메뉴 개발/확정', description: '원가율, 제조 난이도, 회전률, 플레이팅', iconType: 'utensils', applicableTo: ['FOOD', 'CAFE'] },
+  // 교육
+  { id: 'curriculum_dev', category: 'PLANNING', title: '커리큘럼 개발', description: '교육 과정, 교재, 수업 계획', iconType: 'book', applicableTo: ['EDUCATION'] },
+  // 헬스/필라테스
+  { id: 'program_dev', category: 'PLANNING', title: '프로그램 설계', description: 'PT 프로그램, 수업 구성, 회원권 설계', iconType: 'clipboard', applicableTo: ['FITNESS'] },
 
-  // 2. 입지/계약
-  { id: 'location_search', category: 'LOCATION', title: '상권 선정', description: '유동인구, 타겟 고객, 상권 특성 분석', iconType: 'map' },
-  { id: 'real_estate', category: 'LOCATION', title: '부동산 탐색', description: '공인중개사 비교, 여러 매물 비교', iconType: 'building' },
-  { id: 'registry_check', category: 'LOCATION', title: '등기부등본 확인', description: '집주인, 대출 여부, 권리관계 확인', iconType: 'file' },
-  { id: 'facility_check', category: 'LOCATION', title: '시설 점검', description: '전기 용량, 도시가스, 닥트, 수도/배수, 화장실', iconType: 'clipboard' },
-  { id: 'contract', category: 'LOCATION', title: '부동산 계약', description: '렌트프리 협상, 권리금 흥정 (필수!)', iconType: 'pen' },
+  // ===== 2. 입지/계약 =====
+  // 공통
+  { id: 'location_search', category: 'LOCATION', title: '상권 선정', description: '유동인구, 타겟 고객, 상권 특성 분석', iconType: 'map', applicableTo: ['ALL'] },
+  { id: 'real_estate', category: 'LOCATION', title: '부동산 탐색', description: '공인중개사 비교, 여러 매물 비교', iconType: 'building', applicableTo: ['ALL'] },
+  { id: 'registry_check', category: 'LOCATION', title: '등기부등본 확인', description: '집주인, 대출 여부, 권리관계 확인', iconType: 'file', applicableTo: ['ALL'] },
+  { id: 'facility_check', category: 'LOCATION', title: '시설 점검', description: '전기 용량, 도시가스, 닥트, 수도/배수', iconType: 'clipboard', applicableTo: ['ALL'] },
+  { id: 'contract', category: 'LOCATION', title: '부동산 계약', description: '렌트프리 협상, 권리금 흥정', iconType: 'pen', applicableTo: ['ALL'] },
 
-  // 3. 인허가/행정
-  { id: 'health_cert', category: 'PERMIT', title: '보건증 발급', description: '가까운 보건소 방문, 신분증 지참', iconType: 'heart' },
-  { id: 'hygiene_edu', category: 'PERMIT', title: '위생교육 수료', description: '첫 창업은 오프라인 필수, 인터넷 가능(재창업)', iconType: 'book' },
-  { id: 'business_permit', category: 'PERMIT', title: '영업신고증 발급', description: '구청 위생과, 일반음식점 권장 (세금 혜택)', iconType: 'stamp' },
-  { id: 'business_reg', category: 'PERMIT', title: '사업자등록증', description: '세무서 민원실, 영업신고증 필요', iconType: 'file' },
+  // ===== 3. 인허가/행정 =====
+  // 공통
+  { id: 'business_reg', category: 'PERMIT', title: '사업자등록증', description: '세무서 민원실 방문', iconType: 'file', applicableTo: ['ALL'] },
+  // 음식점/카페
+  { id: 'health_cert', category: 'PERMIT', title: '보건증 발급', description: '보건소 방문, 신분증 지참', iconType: 'heart', applicableTo: ['FOOD', 'CAFE'] },
+  { id: 'hygiene_edu', category: 'PERMIT', title: '위생교육 수료', description: '첫 창업은 오프라인 필수', iconType: 'book', applicableTo: ['FOOD', 'CAFE'] },
+  { id: 'business_permit', category: 'PERMIT', title: '영업신고증 발급', description: '구청 위생과, 일반음식점 권장', iconType: 'stamp', applicableTo: ['FOOD', 'CAFE'] },
+  // 미용
+  { id: 'beauty_license', category: 'PERMIT', title: '미용사 면허 확인', description: '국가자격증, 이미용사 면허', iconType: 'stamp', applicableTo: ['BEAUTY'] },
+  { id: 'beauty_permit', category: 'PERMIT', title: '미용업 신고', description: '구청 위생과, 업종별 신고', iconType: 'file', applicableTo: ['BEAUTY'] },
+  // 교육/학원
+  { id: 'academy_reg', category: 'PERMIT', title: '학원 등록', description: '교육청 학원 등록, 시설 기준 확인', iconType: 'stamp', applicableTo: ['EDUCATION'] },
+  // 헬스/체육시설
+  { id: 'sports_permit', category: 'PERMIT', title: '체육시설업 신고', description: '구청 체육과, 시설 기준 확인', iconType: 'stamp', applicableTo: ['FITNESS'] },
+  // PC방/오락
+  { id: 'game_permit', category: 'PERMIT', title: '게임제공업 등록', description: '구청, 청소년 출입 제한 여부', iconType: 'stamp', applicableTo: ['ENTERTAINMENT'] },
 
-  // 4. 공사/시공
-  { id: 'demolition', category: 'CONSTRUCTION', title: '철거 공사', description: '폐기물 처리 비용 포함 계약', iconType: 'hammer' },
-  { id: 'plumbing', category: 'CONSTRUCTION', title: '배관/배수 공사', description: '배수 빠뜨리면 바닥 다시 깐다!', iconType: 'droplet' },
-  { id: 'electric', category: 'CONSTRUCTION', title: '전기/콘센트', description: '콘센트, 조명 여유있게 설계', iconType: 'zap' },
-  { id: 'floor', category: 'CONSTRUCTION', title: '바닥/타일 공사', description: '배관 후 바닥, 타일 순서', iconType: 'layers' },
-  { id: 'interior', category: 'CONSTRUCTION', title: '인테리어 목작업', description: '업종별 맞춤 설계', iconType: 'paint' },
-  { id: 'signage', category: 'CONSTRUCTION', title: '간판 설치', description: '외부 간판, 내부 사인물', iconType: 'sign' },
-  { id: 'cleaning', category: 'CONSTRUCTION', title: '전문 청소', description: '준공 딥클리닝', iconType: 'sparkles' },
+  // ===== 4. 공사/시공 =====
+  // 공통
+  { id: 'demolition', category: 'CONSTRUCTION', title: '철거 공사', description: '폐기물 처리 비용 포함', iconType: 'hammer', applicableTo: ['ALL'] },
+  { id: 'electric', category: 'CONSTRUCTION', title: '전기/콘센트', description: '콘센트, 조명 여유있게', iconType: 'zap', applicableTo: ['ALL'] },
+  { id: 'floor', category: 'CONSTRUCTION', title: '바닥/타일 공사', description: '배관 후 바닥, 타일 순서', iconType: 'layers', applicableTo: ['ALL'] },
+  { id: 'interior', category: 'CONSTRUCTION', title: '인테리어 목작업', description: '업종별 맞춤 설계', iconType: 'paint', applicableTo: ['ALL'] },
+  { id: 'signage', category: 'CONSTRUCTION', title: '간판 설치', description: '외부 간판, 내부 사인물', iconType: 'sign', applicableTo: ['ALL'] },
+  { id: 'cleaning', category: 'CONSTRUCTION', title: '전문 청소', description: '준공 딥클리닝', iconType: 'sparkles', applicableTo: ['ALL'] },
+  // 음식점/카페 (배관/가스 필수)
+  { id: 'plumbing', category: 'CONSTRUCTION', title: '배관/배수 공사', description: '배수 빠뜨리면 바닥 다시 깐다!', iconType: 'droplet', applicableTo: ['FOOD', 'CAFE'] },
+  { id: 'duct', category: 'CONSTRUCTION', title: '닥트/환기 공사', description: '주방 환기, 냄새 배출', iconType: 'wind', applicableTo: ['FOOD', 'CAFE'] },
+  // 미용실
+  { id: 'plumbing_beauty', category: 'CONSTRUCTION', title: '샴푸대 배관', description: '샴푸대 위치, 배수 설계', iconType: 'droplet', applicableTo: ['BEAUTY'] },
+  // 헬스장
+  { id: 'shower_room', category: 'CONSTRUCTION', title: '샤워실/탈의실', description: '샤워부스, 락커, 배관', iconType: 'droplet', applicableTo: ['FITNESS'] },
 
-  // 5. 집기/장비
-  { id: 'kitchen_layout', category: 'EQUIPMENT', title: '주방 동선 설계', description: '콘센트 위치, 냉장고/화구 배치', iconType: 'layout' },
-  { id: 'kitchen_equip', category: 'EQUIPMENT', title: '주방 장비 구입', description: '중고 AS 확실한 업체 (잠수 주의)', iconType: 'flame' },
-  { id: 'furniture', category: 'EQUIPMENT', title: '테이블/의자', description: '테이블 수, 홀 동선 고려', iconType: 'armchair' },
-  { id: 'tableware', category: 'EQUIPMENT', title: '식기/그릇', description: '업종별 필수 식기류', iconType: 'utensils' },
-  { id: 'gas_work', category: 'EQUIPMENT', title: '가스 공사', description: '주방 집기 설치 후 진행', iconType: 'flame' },
+  // ===== 5. 집기/장비 =====
+  // 공통
+  { id: 'furniture', category: 'EQUIPMENT', title: '테이블/의자', description: '고객용 가구 배치', iconType: 'armchair', applicableTo: ['ALL'] },
+  // 음식점
+  { id: 'kitchen_layout', category: 'EQUIPMENT', title: '주방 동선 설계', description: '콘센트 위치, 냉장고/화구 배치', iconType: 'layout', applicableTo: ['FOOD'] },
+  { id: 'kitchen_equip', category: 'EQUIPMENT', title: '주방 장비 구입', description: '중고 AS 확실한 업체 (잠수 주의)', iconType: 'flame', applicableTo: ['FOOD'] },
+  { id: 'tableware', category: 'EQUIPMENT', title: '식기/그릇', description: '업종별 필수 식기류', iconType: 'utensils', applicableTo: ['FOOD'] },
+  { id: 'gas_work', category: 'EQUIPMENT', title: '가스 공사', description: '주방 집기 설치 후 진행', iconType: 'flame', applicableTo: ['FOOD'] },
+  // 카페
+  { id: 'coffee_machine', category: 'EQUIPMENT', title: '커피 머신', description: '에스프레소 머신, 그라인더', iconType: 'coffee', applicableTo: ['CAFE'] },
+  { id: 'cafe_equip', category: 'EQUIPMENT', title: '카페 장비', description: '제빙기, 블렌더, 쇼케이스', iconType: 'box', applicableTo: ['CAFE'] },
+  // 미용실
+  { id: 'beauty_chair', category: 'EQUIPMENT', title: '미용 의자/경대', description: '시술 의자, 거울, 경대', iconType: 'armchair', applicableTo: ['BEAUTY'] },
+  { id: 'shampoo_unit', category: 'EQUIPMENT', title: '샴푸대', description: '샴푸 유닛, 배수 연결', iconType: 'droplet', applicableTo: ['BEAUTY'] },
+  { id: 'beauty_tools', category: 'EQUIPMENT', title: '미용 기기/도구', description: '드라이어, 고데기, 염색 도구', iconType: 'scissors', applicableTo: ['BEAUTY'] },
+  // 헬스/필라테스
+  { id: 'gym_equip', category: 'EQUIPMENT', title: '운동 기구', description: '유산소, 웨이트, 기구 배치', iconType: 'dumbbell', applicableTo: ['FITNESS'] },
+  { id: 'locker', category: 'EQUIPMENT', title: '락커/수납', description: '개인 락커, 수건 보관', iconType: 'box', applicableTo: ['FITNESS'] },
+  // 교육/학원
+  { id: 'desk_chair', category: 'EQUIPMENT', title: '책상/의자', description: '학생용 책걸상, 강사 책상', iconType: 'armchair', applicableTo: ['EDUCATION'] },
+  { id: 'whiteboard', category: 'EQUIPMENT', title: '칠판/화이트보드', description: '강의용 보드, 스크린', iconType: 'layout', applicableTo: ['EDUCATION'] },
+  { id: 'edu_material', category: 'EQUIPMENT', title: '교재/교구', description: '학습 교재, 교육 도구', iconType: 'book', applicableTo: ['EDUCATION'] },
+  // PC방
+  { id: 'pc_setup', category: 'EQUIPMENT', title: 'PC/모니터', description: '고사양 PC, 게이밍 모니터', iconType: 'tablet', applicableTo: ['ENTERTAINMENT'] },
+  { id: 'gaming_chair', category: 'EQUIPMENT', title: '게이밍 의자/책상', description: '장시간 착석용 의자', iconType: 'armchair', applicableTo: ['ENTERTAINMENT'] },
+  // 소매
+  { id: 'display_shelf', category: 'EQUIPMENT', title: '진열대/선반', description: '상품 진열, 곤돌라', iconType: 'box', applicableTo: ['RETAIL'] },
+  { id: 'showcase', category: 'EQUIPMENT', title: '쇼케이스/냉장고', description: '상품 보관, 냉장 진열', iconType: 'box', applicableTo: ['RETAIL'] },
 
-  // 6. 시스템 세팅
-  { id: 'bank_account', category: 'SYSTEM', title: '사업자 통장 개설', description: '사업자등록증 필요', iconType: 'wallet' },
-  { id: 'card_merchant', category: 'SYSTEM', title: '카드사 가맹', description: '카드 결제 가맹 계약', iconType: 'creditcard' },
-  { id: 'pos', category: 'SYSTEM', title: 'POS/키오스크', description: '주문/결제 시스템 설치', iconType: 'tablet' },
-  { id: 'internet', category: 'SYSTEM', title: '인터넷/통신', description: '업소용 인터넷, 전화 설치', iconType: 'wifi' },
-  { id: 'cctv', category: 'SYSTEM', title: 'CCTV', description: '보안 카메라 설치', iconType: 'camera' },
-  { id: 'beverage', category: 'SYSTEM', title: '음료/주류사 계약', description: '제빙기/냉장고 협상 필수!', iconType: 'wine' },
+  // ===== 6. 시스템 세팅 =====
+  // 공통
+  { id: 'bank_account', category: 'SYSTEM', title: '사업자 통장 개설', description: '사업자등록증 필요', iconType: 'wallet', applicableTo: ['ALL'] },
+  { id: 'card_merchant', category: 'SYSTEM', title: '카드사 가맹', description: '카드 결제 가맹 계약', iconType: 'creditcard', applicableTo: ['ALL'] },
+  { id: 'pos', category: 'SYSTEM', title: 'POS/키오스크', description: '주문/결제 시스템 설치', iconType: 'tablet', applicableTo: ['ALL'] },
+  { id: 'internet', category: 'SYSTEM', title: '인터넷/통신', description: '업소용 인터넷, 전화', iconType: 'wifi', applicableTo: ['ALL'] },
+  { id: 'cctv', category: 'SYSTEM', title: 'CCTV', description: '보안 카메라 설치', iconType: 'camera', applicableTo: ['ALL'] },
+  // 음식점/카페
+  { id: 'beverage', category: 'SYSTEM', title: '음료/주류사 계약', description: '제빙기/냉장고 협상 필수!', iconType: 'wine', applicableTo: ['FOOD', 'CAFE'] },
+  { id: 'wholesale', category: 'SYSTEM', title: '식자재 도매처', description: '정기 배송 계약', iconType: 'truck', applicableTo: ['FOOD', 'CAFE'] },
+  // 카페
+  { id: 'coffee_supplier', category: 'SYSTEM', title: '원두 거래처', description: '로스터리 계약, 원두 선정', iconType: 'coffee', applicableTo: ['CAFE'] },
+  // 미용
+  { id: 'beauty_supplier', category: 'SYSTEM', title: '미용 재료 거래처', description: '염색약, 펌약, 소모품', iconType: 'truck', applicableTo: ['BEAUTY'] },
+  // PC방
+  { id: 'game_license', category: 'SYSTEM', title: '게임 라이선스', description: '게임사 계약, 라이선스', iconType: 'play', applicableTo: ['ENTERTAINMENT'] },
+  { id: 'network_setup', category: 'SYSTEM', title: '네트워크 구축', description: '고속 인터넷, 내부 네트워크', iconType: 'wifi', applicableTo: ['ENTERTAINMENT'] },
+  // 소매
+  { id: 'inventory_system', category: 'SYSTEM', title: '재고관리 시스템', description: '바코드, 재고 관리', iconType: 'clipboard', applicableTo: ['RETAIL'] },
+  { id: 'supplier_contract', category: 'SYSTEM', title: '도매처 계약', description: '상품 공급 계약', iconType: 'truck', applicableTo: ['RETAIL'] },
 
-  // 7. 인력/운영
-  { id: 'hiring', category: 'OPERATION', title: '직원 채용', description: '서빙, 주방, 설거지 파트별 채용', iconType: 'users' },
-  { id: 'manual', category: 'OPERATION', title: '운영 매뉴얼', description: '메뉴 매뉴얼 + 서비스 매뉴얼', iconType: 'book' },
-  { id: 'operation_design', category: 'OPERATION', title: '오퍼레이션 설계', description: '누가 어디서 무엇을 하는지 정리', iconType: 'clipboard' },
-  { id: 'insurance', category: 'OPERATION', title: '보험 가입', description: '화재보험, 영업배상책임보험', iconType: 'shield' },
+  // ===== 7. 인력/운영 =====
+  // 공통
+  { id: 'hiring', category: 'OPERATION', title: '직원 채용', description: '업종별 필요 인력 채용', iconType: 'users', applicableTo: ['ALL'] },
+  { id: 'manual', category: 'OPERATION', title: '운영 매뉴얼', description: '업무 매뉴얼, 서비스 기준', iconType: 'book', applicableTo: ['ALL'] },
+  { id: 'operation_design', category: 'OPERATION', title: '오퍼레이션 설계', description: '누가 어디서 무엇을 하는지', iconType: 'clipboard', applicableTo: ['ALL'] },
+  { id: 'insurance', category: 'OPERATION', title: '보험 가입', description: '화재보험, 영업배상책임보험', iconType: 'shield', applicableTo: ['ALL'] },
+  // 음식점
+  { id: 'recipe_training', category: 'OPERATION', title: '레시피 교육', description: '조리법, 플레이팅 교육', iconType: 'utensils', applicableTo: ['FOOD'] },
+  // 카페
+  { id: 'barista_training', category: 'OPERATION', title: '바리스타 교육', description: '커피 추출, 음료 제조', iconType: 'coffee', applicableTo: ['CAFE'] },
+  // 헬스
+  { id: 'trainer_cert', category: 'OPERATION', title: '트레이너 자격', description: '퍼스널트레이너, 필라테스 자격', iconType: 'users', applicableTo: ['FITNESS'] },
+  // 교육
+  { id: 'teacher_hire', category: 'OPERATION', title: '강사 채용', description: '과목별 강사, 자격 확인', iconType: 'users', applicableTo: ['EDUCATION'] },
 
-  // 8. 오픈/마케팅
-  { id: 'sns_setup', category: 'MARKETING', title: 'SNS 세팅', description: '인스타그램, 네이버 플레이스 완벽 세팅', iconType: 'instagram' },
-  { id: 'photo_shoot', category: 'MARKETING', title: '메뉴 사진 촬영', description: '전문 촬영 또는 셀프 촬영', iconType: 'image' },
-  { id: 'menu_print', category: 'MARKETING', title: '메뉴판/홍보물', description: '메뉴판, 전단지, 현수막', iconType: 'file' },
-  { id: 'delivery_setup', category: 'MARKETING', title: '배달앱 등록', description: '배민, 요기요, 쿠팡이츠 입점', iconType: 'bike' },
-  { id: 'soft_open', category: 'MARKETING', title: '소프트 오픈', description: '지인 초대 금지! 찐 손님으로 테스트', iconType: 'users' },
-  { id: 'grand_open', category: 'MARKETING', title: '그랜드 오픈', description: '인력 충분히 배치, 첫 손님 응대가 중요!', iconType: 'rocket' },
+  // ===== 8. 오픈/마케팅 =====
+  // 공통
+  { id: 'sns_setup', category: 'MARKETING', title: 'SNS 세팅', description: '인스타그램, 네이버 플레이스', iconType: 'instagram', applicableTo: ['ALL'] },
+  { id: 'photo_shoot', category: 'MARKETING', title: '홍보 사진 촬영', description: '전문 촬영 또는 셀프', iconType: 'image', applicableTo: ['ALL'] },
+  { id: 'promo_material', category: 'MARKETING', title: '홍보물 제작', description: '전단지, 현수막, 명함', iconType: 'file', applicableTo: ['ALL'] },
+  { id: 'soft_open', category: 'MARKETING', title: '소프트 오픈', description: '테스트 운영, 피드백 수집', iconType: 'users', applicableTo: ['ALL'] },
+  { id: 'grand_open', category: 'MARKETING', title: '그랜드 오픈', description: '정식 오픈, 첫 손님 응대', iconType: 'rocket', applicableTo: ['ALL'] },
+  // 음식점/카페
+  { id: 'delivery_setup', category: 'MARKETING', title: '배달앱 등록', description: '배민, 요기요, 쿠팡이츠', iconType: 'bike', applicableTo: ['FOOD', 'CAFE'] },
+  { id: 'menu_print', category: 'MARKETING', title: '메뉴판 제작', description: '테이블 메뉴판, 벽면 메뉴', iconType: 'file', applicableTo: ['FOOD', 'CAFE'] },
+  // 교육
+  { id: 'student_recruit', category: 'MARKETING', title: '수강생 모집', description: '홍보, 상담, 등록', iconType: 'users', applicableTo: ['EDUCATION'] },
+  // 헬스
+  { id: 'member_recruit', category: 'MARKETING', title: '회원 모집', description: '오픈 이벤트, 회원권 판매', iconType: 'users', applicableTo: ['FITNESS'] },
 ];
+
+// 업종별 체크리스트 필터 헬퍼 함수
+export const getTasksForBusinessType = (businessType: string): OpenTaskItem[] => {
+  // 업종 매핑 (CATEGORY_TREE의 id -> BusinessCategoryType)
+  const categoryMapping: Record<string, string> = {
+    // 음식/외식
+    'FOOD': 'FOOD', 'KOREAN': 'FOOD', 'JAPANESE': 'FOOD', 'CHINESE': 'FOOD',
+    'WESTERN': 'FOOD', 'BUNSIK': 'FOOD', 'CHICKEN': 'FOOD', 'FASTFOOD': 'FOOD',
+    'PUB': 'FOOD', 'FUSION': 'FOOD', 'SEAFOOD': 'FOOD', 'BUFFET': 'FOOD',
+    // 카페
+    'CAFE': 'CAFE', 'BAKERY': 'CAFE',
+    // 소매
+    'RETAIL': 'RETAIL', 'CVS': 'RETAIL', 'GROCERY': 'RETAIL',
+    // 미용
+    'BEAUTY': 'BEAUTY', 'HAIR': 'BEAUTY', 'SKIN': 'BEAUTY', 'NAIL': 'BEAUTY',
+    // 헬스
+    'FITNESS': 'FITNESS', 'PILATES': 'FITNESS', 'MASSAGE': 'FITNESS',
+    // 교육
+    'EDUCATION': 'EDUCATION', 'STUDY': 'EDUCATION', 'ACADEMY_STUDY': 'EDUCATION',
+    // 오락
+    'ENTERTAINMENT': 'ENTERTAINMENT', 'PC': 'ENTERTAINMENT', 'ARCADE': 'ENTERTAINMENT', 'KARAOKE': 'ENTERTAINMENT',
+    // 사무실
+    'OFFICE': 'OFFICE', 'COWORKING': 'OFFICE',
+  };
+
+  const mappedType = categoryMapping[businessType] || 'OTHER';
+
+  return OPEN_PROCESS_TASKS.filter(task =>
+    task.applicableTo.includes('ALL') || task.applicableTo.includes(mappedType as any)
+  );
+};
 
 // Helper to create mock products
 const createProduct = (name: string, category: string, w: number, d: number, h: number, price: number = 0, grade: ItemGrade = ItemGrade.A): Product => ({

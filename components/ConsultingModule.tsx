@@ -1,13 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { ConsultingBooking, OpenTaskItem, TaskDetailData, TaskCategoryGroup } from '../types';
-import { OPEN_PROCESS_TASKS, OPEN_TASK_CATEGORIES } from '../constants';
+import { OPEN_TASK_CATEGORIES, getTasksForBusinessType } from '../constants';
 import { Button, Input, Badge } from './Components';
 import {
   Check, X, ArrowRight, Settings, MapPin, Hammer, ShoppingBag,
   ShieldCheck, Zap, Box, FileText, Bike, Wine, Upload, Trash2, File as FileIcon, Building2,
   BarChart3, ClipboardList, Calculator, RefreshCw, Camera, Tablet, Coffee, Image, Rocket,
   Lightbulb, Utensils, Pen, Heart, Stamp, Droplet, Layers, LayoutGrid, Wallet, CreditCard,
-  Users, Instagram, Armchair, Flame, Wifi, Truck, Shield, Phone, PlayCircle, Megaphone
+  Users, Instagram, Armchair, Flame, Wifi, Truck, Shield, Phone, PlayCircle, Megaphone,
+  Wind, Scissors, Dumbbell
 } from 'lucide-react';
 
 interface ConsultingModuleProps {
@@ -155,6 +156,9 @@ export const ConsultingModule: React.FC<ConsultingModuleProps> = ({
       case 'truck': return Truck;
       case 'play': return PlayCircle;
       case 'megaphone': return Megaphone;
+      case 'wind': return Wind;
+      case 'scissors': return Scissors;
+      case 'dumbbell': return Dumbbell;
       default: return Check;
     }
   };
@@ -289,7 +293,9 @@ export const ConsultingModule: React.FC<ConsultingModuleProps> = ({
 
             <div className="space-y-5">
                 {OPEN_TASK_CATEGORIES.map(group => {
-                    const tasks = OPEN_PROCESS_TASKS.filter(t => t.category === group.id);
+                    // 업종에 맞는 체크리스트 항목만 필터링
+                    const filteredTasks = getTasksForBusinessType(context.businessType);
+                    const tasks = filteredTasks.filter(t => t.category === group.id);
                     if (tasks.length === 0) return null;
 
                     return (

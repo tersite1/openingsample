@@ -6,7 +6,7 @@ import {
   ChevronRight, Check, Clock, Loader2, Send, ArrowRight, X,
   Star, Award, MapPin, Calendar, CheckCircle, AlertTriangle,
   ClipboardList, Building2, ChevronDown, ExternalLink, AlertCircle,
-  Image, Eye, EyeOff, Paperclip
+  Image, Eye, EyeOff, Paperclip, Plus, Trash2
 } from 'lucide-react';
 
 interface PMPortalViewProps {
@@ -142,6 +142,12 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [showStepModal, setShowStepModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showCustomItemModal, setShowCustomItemModal] = useState(false);
+  const [customItemForm, setCustomItemForm] = useState({
+    title: '',
+    category: 'PLANNING',
+    description: '',
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -284,6 +290,65 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
   const getPartnerForItem = (itemId: string) => {
     const assignment = assignments.find(a => a.checklist_item_id === itemId);
     return assignment;
+  };
+
+  // 커스텀 체크리스트 항목 추가
+  const addCustomChecklistItem = async () => {
+    if (!selectedProject || !customItemForm.title.trim()) return;
+
+    const newItem: ChecklistItemData = {
+      id: `custom_${Date.now()}`,
+      title: customItemForm.title.trim(),
+      category: customItemForm.category,
+      description: customItemForm.description.trim() || undefined,
+      status: 'unchecked',
+    };
+
+    const updatedChecklist = [...(selectedProject.checklist_data || []), newItem];
+
+    const { error } = await supabase
+      .from('consultings')
+      .update({ checklist_data: updatedChecklist })
+      .eq('id', selectedProject.id);
+
+    if (!error) {
+      // 로컬 상태 업데이트
+      setSelectedProject({
+        ...selectedProject,
+        checklist_data: updatedChecklist,
+      });
+      setProjects(prev =>
+        prev.map(p =>
+          p.id === selectedProject.id ? { ...p, checklist_data: updatedChecklist } : p
+        )
+      );
+      setShowCustomItemModal(false);
+      setCustomItemForm({ title: '', category: 'PLANNING', description: '' });
+    }
+  };
+
+  // 커스텀 체크리스트 항목 삭제
+  const deleteCustomChecklistItem = async (itemId: string) => {
+    if (!selectedProject) return;
+
+    const updatedChecklist = selectedProject.checklist_data?.filter(item => item.id !== itemId) || [];
+
+    const { error } = await supabase
+      .from('consultings')
+      .update({ checklist_data: updatedChecklist })
+      .eq('id', selectedProject.id);
+
+    if (!error) {
+      setSelectedProject({
+        ...selectedProject,
+        checklist_data: updatedChecklist,
+      });
+      setProjects(prev =>
+        prev.map(p =>
+          p.id === selectedProject.id ? { ...p, checklist_data: updatedChecklist } : p
+        )
+      );
+    }
   };
 
   const subscribeToMessages = (projectId: string) => {
@@ -898,6 +963,20 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
                               <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
                                 {CHECKLIST_CATEGORIES.find(c => c.id === item.category)?.label || item.category}
                               </span>
+                              {item.id.startsWith('custom_') && (
+                                <>
+                                  <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">
+                                    커스텀
+                                  </span>
+                                  <button
+                                    onClick={() => deleteCustomChecklistItem(item.id)}
+                                    className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                                    title="항목 삭제"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </>
+                              )}
                             </div>
                             {item.description && (
                               <p className="text-sm text-gray-500 ml-6 mb-2">{item.description}</p>
@@ -957,6 +1036,15 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
                       <p>체크리스트 항목이 없습니다</p>
                     </div>
                   )}
+
+                  {/* 커스텀 항목 추가 버튼 */}
+                  <button
+                    onClick={() => setShowCustomItemModal(true)}
+                    className="w-full mt-4 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-brand-500 hover:text-brand-600 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Plus size={18} />
+                    특이 케이스 항목 추가
+                  </button>
                 </div>
               </div>
             )}
@@ -1143,6 +1231,67 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 커스텀 체크리스트 항목 추가 모달 */}
+      {showCustomItemModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-hidden m-4">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
+              <h2 className="text-xl font-bold">특이 케이스 항목 추가</h2>
+              <button
+                onClick={() => {
+                  setShowCustomItemModal(false);
+                  setCustomItemForm({ title: '', category: 'PLANNING', description: '' });
+                }}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">항목명 *</label>
+                <input
+                  type="text"
+                  value={customItemForm.title}
+                  onChange={(e) => setCustomItemForm({ ...customItemForm, title: e.target.value })}
+                  placeholder="예: 특수 환기 시스템 설치"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">카테고리</label>
+                <select
+                  value={customItemForm.category}
+                  onChange={(e) => setCustomItemForm({ ...customItemForm, category: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                >
+                  {CHECKLIST_CATEGORIES.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">설명 (선택)</label>
+                <textarea
+                  value={customItemForm.description}
+                  onChange={(e) => setCustomItemForm({ ...customItemForm, description: e.target.value })}
+                  placeholder="추가 설명이 필요한 경우 입력하세요"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none h-24"
+                />
+              </div>
+              <Button
+                fullWidth
+                onClick={addCustomChecklistItem}
+                disabled={!customItemForm.title.trim()}
+              >
+                <Plus size={18} className="mr-2" />
+                항목 추가
+              </Button>
             </div>
           </div>
         </div>

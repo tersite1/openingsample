@@ -190,13 +190,26 @@ export interface ConsultingOption {
 }
 
 // --- [Updated] Task Categories ---
-export type TaskCategoryGroup = 'CONSTRUCTION' | 'OPERATION' | 'INFO' | 'OPENING_LITE';
+export type TaskCategoryGroup = 'PLANNING' | 'LOCATION' | 'PERMIT' | 'CONSTRUCTION' | 'EQUIPMENT' | 'SYSTEM' | 'OPERATION' | 'MARKETING';
 
 export interface OpenTaskCategory {
   id: TaskCategoryGroup;
   label: string;
   description: string;
 }
+
+// 업종 타입 (체크리스트 필터링용)
+export type BusinessCategoryType =
+  | 'ALL'           // 공통 (모든 업종)
+  | 'FOOD'          // 음식점/식당
+  | 'CAFE'          // 카페/커피
+  | 'RETAIL'        // 소매/유통
+  | 'BEAUTY'        // 미용 (헤어, 네일, 피부)
+  | 'FITNESS'       // 헬스/필라테스
+  | 'EDUCATION'     // 학원/교육
+  | 'ENTERTAINMENT' // PC방/오락
+  | 'OFFICE'        // 사무실
+  | 'OTHER';        // 기타
 
 // --- [Updated] Task Item Definition ---
 export interface OpenTaskItem {
@@ -205,9 +218,11 @@ export interface OpenTaskItem {
   description: string;
   category: TaskCategoryGroup; // Grouping
   iconType: string; // Icon mapping string
+  applicableTo: BusinessCategoryType[]; // 적용 업종 (ALL이면 모든 업종)
   leadTime?: string; // Optional if not used everywhere
   isRequired?: boolean;
   isOpeningExclusive?: boolean; // Opening exclusive badge
+  isCustom?: boolean; // PM이 추가한 커스텀 항목 여부
 }
 
 // --- [New] Task Detail Form Data ---
