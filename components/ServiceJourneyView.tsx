@@ -12,7 +12,7 @@ import {
   Check, X, AlertTriangle, HelpCircle, ChevronDown, ChevronUp,
   Wind, Flame, ChefHat, Package, Monitor, Truck, Refrigerator, Armchair,
   Users, TrendingDown, Navigation, MapPinned, CircleDollarSign, Eye,
-  Briefcase, MoreHorizontal
+  Briefcase, MoreHorizontal, ImagePlus
 } from 'lucide-react';
 
 interface ServiceJourneyViewProps {
@@ -389,7 +389,11 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // UI 상태
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -508,7 +512,7 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() && !selectedImage) return;
 
     const messageText = newMessage.trim();
     setSending(true);
@@ -518,7 +522,8 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
       const guestMessage: Message = {
         id: `guest-msg-${Date.now()}`,
         sender_type: 'USER',
-        message: messageText,
+        message: messageText || '📷 이미지',
+        attachments: imagePreview ? [{ url: imagePreview, type: 'image', name: 'preview' }] : undefined,
         created_at: new Date().toISOString()
       };
       setMessages(prev => [...prev, guestMessage]);
@@ -535,6 +540,8 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
       }, 1000);
 
       setNewMessage('');
+      setSelectedImage(null);
+      setImagePreview(null);
       setSending(false);
       return;
     }
@@ -546,10 +553,37 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
     }
 
     try {
+      let attachments: { url: string; type: string; name: string }[] | undefined;
+
+      // 이미지 업로드 처리
+      if (selectedImage) {
+        setUploadingImage(true);
+        const fileExt = selectedImage.name.split('.').pop();
+        const fileName = `${project.id}/${Date.now()}.${fileExt}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('chat-images')
+          .upload(fileName, selectedImage);
+
+        if (!uploadError && uploadData) {
+          const { data: urlData } = supabase.storage
+            .from('chat-images')
+            .getPublicUrl(fileName);
+
+          attachments = [{
+            url: urlData.publicUrl,
+            type: selectedImage.type,
+            name: selectedImage.name
+          }];
+        }
+        setUploadingImage(false);
+      }
+
       const { data, error } = await supabase.from('project_messages').insert({
         project_id: project.id,
         sender_type: 'USER',
-        message: messageText
+        message: messageText || '📷 이미지',
+        attachments: attachments || null
       }).select().single();
 
       if (error) {
@@ -558,7 +592,8 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
         const tempMessage: Message = {
           id: `temp-${Date.now()}`,
           sender_type: 'USER',
-          message: messageText,
+          message: messageText || '📷 이미지',
+          attachments: attachments,
           created_at: new Date().toISOString()
         };
         setMessages(prev => [...prev, tempMessage]);
@@ -575,7 +610,30 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
     }
 
     setNewMessage('');
+    setSelectedImage(null);
+    setImagePreview(null);
     setSending(false);
+  };
+
+  // 이미지 선택 핸들러
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const cancelImageUpload = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   // 프로젝트 취소
@@ -1315,7 +1373,34 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
 
         {/* 메시지 입력 */}
         <div className="p-4 bg-white border-t">
+          {/* 이미지 미리보기 */}
+          {imagePreview && (
+            <div className="mb-3 relative inline-block">
+              <img src={imagePreview} alt="미리보기" className="max-h-32 rounded-lg border" />
+              <button
+                onClick={cancelImageUpload}
+                className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
+              >
+                ✕
+              </button>
+            </div>
+          )}
           <div className="flex gap-2">
+            {/* 이미지 첨부 버튼 */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageSelect}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-12 h-12 bg-gray-100 text-gray-600 rounded-xl flex items-center justify-center hover:bg-gray-200"
+              title="사진 첨부"
+            >
+              <ImagePlus size={20} />
+            </button>
             <input
               type="text"
               placeholder="메시지를 입력하세요"
@@ -1326,10 +1411,10 @@ export const ServiceJourneyView: React.FC<ServiceJourneyViewProps> = ({ onBack, 
             />
             <button
               onClick={sendMessage}
-              disabled={sending || !newMessage.trim()}
+              disabled={sending || uploadingImage || (!newMessage.trim() && !selectedImage)}
               className="w-12 h-12 bg-brand-600 text-white rounded-xl flex items-center justify-center disabled:opacity-50"
             >
-              {sending ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
+              {sending || uploadingImage ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
             </button>
           </div>
         </div>

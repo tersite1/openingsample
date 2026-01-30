@@ -113,6 +113,22 @@ const PARTNER_CATEGORIES = [
   { id: 'marketing', label: '마케팅', icon: TrendingUp, subcategories: ['배달앱입점', 'SNS마케팅', '간판/사인물'] },
 ];
 
+// 프로젝트 단계 라벨
+const STEP_LABELS: Record<number, string> = {
+  1: '업종선택',
+  2: '위치선택',
+  3: '상권분석',
+  4: '매장규모',
+  5: '체크리스트',
+  6: '비용산출',
+  7: '상담시작',
+  8: '비용컨설팅',
+  9: '계약/착수',
+  10: '진행중',
+  11: '오픈완료',
+  12: '사후관리'
+};
+
 export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [loading, setLoading] = useState(true);
@@ -228,6 +244,37 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
       alert('메시지 전송 실패: ' + error.message);
     }
     setSendingMessage(false);
+  };
+
+  // 프로젝트 단계 변경
+  const changeProjectStep = async (projectId: string, newStep: number) => {
+    const status = newStep >= 11 ? 'COMPLETED' : newStep >= 7 ? 'IN_PROGRESS' : 'PM_ASSIGNED';
+
+    const { error } = await supabase
+      .from('startup_projects')
+      .update({
+        current_step: newStep,
+        pm_approved_step: newStep,
+        status
+      })
+      .eq('id', projectId);
+
+    if (!error) {
+      // 로컬 상태 업데이트
+      setAllProjects(prev => prev.map(p =>
+        p.id === projectId ? { ...p, current_step: newStep, status } : p
+      ));
+
+      // 단계 변경 알림 메시지 전송
+      await supabase.from('project_messages').insert({
+        project_id: projectId,
+        sender_type: 'SYSTEM',
+        message: `📍 프로젝트 단계가 "${STEP_LABELS[newStep]}"(으)로 변경되었습니다.`
+      });
+      loadProjectMessages(projectId);
+    } else {
+      alert('단계 변경 실패: ' + error.message);
+    }
   };
 
   const loadStats = async () => {
@@ -1055,19 +1102,38 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
 
                     {/* 채팅 내용 */}
                     <div className="flex-1 bg-white rounded-xl border overflow-hidden flex flex-col">
-                      <div className="px-4 py-3 bg-gray-50 border-b font-bold text-sm flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <MessageSquare size={16} />
-                          채팅 내용
+                      <div className="px-4 py-3 bg-gray-50 border-b font-bold text-sm">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <MessageSquare size={16} />
+                            채팅 내용
+                          </div>
+                          {selectedProjectId && (
+                            <button
+                              onClick={() => loadProjectMessages(selectedProjectId)}
+                              className="text-xs text-brand-600 hover:underline flex items-center gap-1"
+                            >
+                              <RefreshCw size={12} />
+                              새로고침
+                            </button>
+                          )}
                         </div>
+                        {/* 단계 변경 */}
                         {selectedProjectId && (
-                          <button
-                            onClick={() => loadProjectMessages(selectedProjectId)}
-                            className="text-xs text-brand-600 hover:underline flex items-center gap-1"
-                          >
-                            <RefreshCw size={12} />
-                            새로고침
-                          </button>
+                          <div className="flex items-center gap-2 pt-2 border-t">
+                            <span className="text-xs text-gray-500">단계:</span>
+                            <select
+                              className="flex-1 text-xs px-2 py-1.5 border rounded-lg bg-white"
+                              value={allProjects.find(p => p.id === selectedProjectId)?.current_step || 7}
+                              onChange={(e) => changeProjectStep(selectedProjectId, Number(e.target.value))}
+                            >
+                              {Object.entries(STEP_LABELS).map(([step, label]) => (
+                                <option key={step} value={step}>
+                                  {step}. {label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         )}
                       </div>
                       {selectedProjectId ? (
