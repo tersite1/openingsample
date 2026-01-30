@@ -6,8 +6,14 @@ import {
   DollarSign, Tag, Search, Filter, ChevronDown, ChevronUp,
   Users, TrendingUp, Package, Settings, LogOut, Home,
   Hammer, PaintBucket, SignpostBig, Wifi, Shield, Bike,
-  Truck, Store, Sparkles, Wind
+  Truck, Store, Sparkles, Wind, CreditCard, BarChart3,
+  UserCheck, Calendar, Eye, Download, RefreshCw, Clock,
+  CheckCircle, XCircle, AlertCircle, Image, MessageSquare
 } from 'lucide-react';
+
+// Toss 결제 키 (테스트)
+const TOSS_CLIENT_KEY = 'test_gck_6BYq7GWPVvne41oxqwbLVNE5vbo1';
+const TOSS_SECRET_KEY = 'test_gsk_EP59LybZ8BBp7Rm1vlvG86GYo7pR';
 
 interface Partner {
   id: string;
@@ -27,9 +33,47 @@ interface Partner {
   created_at: string;
 }
 
+interface Customer {
+  id: string;
+  email: string;
+  full_name: string;
+  phone: string;
+  signup_source: string;
+  created_at: string;
+  projects_count?: number;
+}
+
+interface Payment {
+  id: string;
+  customer_id: string;
+  customer_name: string;
+  amount: number;
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  payment_method: string;
+  description: string;
+  created_at: string;
+  toss_payment_key?: string;
+}
+
+interface PM {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  profile_image?: string;
+  specialty: string[];
+  active_projects: number;
+  total_projects: number;
+  rating: number;
+  is_active: boolean;
+  created_at: string;
+}
+
 interface AdminViewProps {
   onLogout: () => void;
 }
+
+type AdminTab = 'dashboard' | 'payments' | 'customers' | 'pm' | 'partners';
 
 // 협력업체 카테고리
 const PARTNER_CATEGORIES = [
@@ -41,164 +85,202 @@ const PARTNER_CATEGORIES = [
 ];
 
 export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
-  const [partners, setPartners] = useState<Partner[]>([]);
+  const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
 
-  // 통계
+  // 대시보드 통계
   const [stats, setStats] = useState({
-    totalPartners: 0,
-    activePartners: 0,
+    totalCustomers: 0,
     totalProjects: 0,
-    monthlyRevenue: 0
+    totalRevenue: 0,
+    monthlyRevenue: 0,
+    activePartners: 0,
+    activePMs: 0
   });
 
-  // 새 협력업체 폼
-  const [formData, setFormData] = useState<Partial<Partner>>({
-    name: '',
-    category: '',
-    subcategory: '',
-    contact_name: '',
-    contact_phone: '',
-    contact_email: '',
-    description: '',
-    price_min: 0,
-    price_max: 0,
-    price_unit: '만원',
-    commission_rate: 10,
-    service_area: ['강남구'],
-    is_active: true
+  // 데이터
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [pms, setPMs] = useState<PM[]>([]);
+
+  // 필터/검색
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // 모달
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
+  const [showPMModal, setShowPMModal] = useState(false);
+  const [editingPM, setEditingPM] = useState<PM | null>(null);
+
+  // 파트너 폼
+  const [partnerForm, setPartnerForm] = useState<Partial<Partner>>({
+    name: '', category: '', subcategory: '', contact_name: '', contact_phone: '',
+    contact_email: '', description: '', price_min: 0, price_max: 0, price_unit: '만원',
+    commission_rate: 10, service_area: ['강남구'], is_active: true
+  });
+
+  // PM 폼
+  const [pmForm, setPMForm] = useState<Partial<PM>>({
+    name: '', email: '', phone: '', specialty: [], is_active: true
   });
 
   useEffect(() => {
-    loadPartners();
-    loadStats();
+    loadAllData();
   }, []);
 
-  const loadPartners = async () => {
+  const loadAllData = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('partners')
-      .select('*')
-      .order('category', { ascending: true });
-
-    if (data) {
-      setPartners(data);
-    }
+    await Promise.all([
+      loadStats(),
+      loadPartners(),
+      loadCustomers(),
+      loadPayments(),
+      loadPMs()
+    ]);
     setLoading(false);
   };
 
   const loadStats = async () => {
-    // 통계 로드
-    const { data: partnerCount } = await supabase
-      .from('partners')
-      .select('id', { count: 'exact' });
-
-    const { data: projectCount } = await supabase
-      .from('startup_projects')
-      .select('id', { count: 'exact' });
+    const [customersRes, projectsRes, partnersRes] = await Promise.all([
+      supabase.from('profiles').select('id', { count: 'exact' }),
+      supabase.from('startup_projects').select('id', { count: 'exact' }),
+      supabase.from('partners').select('id', { count: 'exact' }).eq('is_active', true)
+    ]);
 
     setStats({
-      totalPartners: partnerCount?.length || 0,
-      activePartners: partners.filter(p => p.is_active).length,
-      totalProjects: projectCount?.length || 0,
-      monthlyRevenue: 0 // 추후 계산
+      totalCustomers: customersRes.count || 0,
+      totalProjects: projectsRes.count || 0,
+      totalRevenue: 0,
+      monthlyRevenue: 0,
+      activePartners: partnersRes.count || 0,
+      activePMs: pms.filter(pm => pm.is_active).length
     });
   };
 
+  const loadPartners = async () => {
+    const { data } = await supabase.from('partners').select('*').order('created_at', { ascending: false });
+    if (data) setPartners(data);
+  };
+
+  const loadCustomers = async () => {
+    const { data: authUsers } = await supabase.auth.admin.listUsers();
+
+    // Fallback: Load from profiles table
+    const { data: profiles } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+
+    if (profiles) {
+      const customerList: Customer[] = profiles.map(p => ({
+        id: p.id,
+        email: p.email || '',
+        full_name: p.full_name || '',
+        phone: p.phone || '',
+        signup_source: p.signup_source || '',
+        created_at: p.created_at
+      }));
+      setCustomers(customerList);
+    }
+  };
+
+  const loadPayments = async () => {
+    const { data } = await supabase.from('payments').select('*').order('created_at', { ascending: false });
+    if (data) setPayments(data);
+    else {
+      // 더미 데이터
+      setPayments([]);
+    }
+  };
+
+  const loadPMs = async () => {
+    const { data } = await supabase.from('project_managers').select('*').order('created_at', { ascending: false });
+    if (data) setPMs(data);
+  };
+
+  // Partner CRUD
   const savePartner = async () => {
-    if (!formData.name || !formData.category) {
+    if (!partnerForm.name || !partnerForm.category) {
       alert('업체명과 카테고리는 필수입니다.');
       return;
     }
 
     if (editingPartner) {
-      // 수정
-      const { error } = await supabase
-        .from('partners')
-        .update(formData)
-        .eq('id', editingPartner.id);
-
-      if (error) {
-        console.error('Error updating partner:', error);
-        alert('수정 실패: ' + error.message);
-        return;
-      }
+      await supabase.from('partners').update(partnerForm).eq('id', editingPartner.id);
     } else {
-      // 신규 추가
-      const { error } = await supabase
-        .from('partners')
-        .insert([formData]);
-
-      if (error) {
-        console.error('Error adding partner:', error);
-        alert('추가 실패: ' + error.message);
-        return;
-      }
+      await supabase.from('partners').insert([partnerForm]);
     }
 
     setShowAddModal(false);
     setEditingPartner(null);
-    resetForm();
+    resetPartnerForm();
     loadPartners();
   };
 
   const deletePartner = async (id: string) => {
     if (!confirm('정말 삭제하시겠습니까?')) return;
-
-    const { error } = await supabase
-      .from('partners')
-      .delete()
-      .eq('id', id);
-
-    if (!error) {
-      loadPartners();
-    }
+    await supabase.from('partners').delete().eq('id', id);
+    loadPartners();
   };
 
-  const togglePartnerActive = async (partner: Partner) => {
-    const { error } = await supabase
-      .from('partners')
-      .update({ is_active: !partner.is_active })
-      .eq('id', partner.id);
-
-    if (!error) {
-      loadPartners();
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      category: '',
-      subcategory: '',
-      contact_name: '',
-      contact_phone: '',
-      contact_email: '',
-      description: '',
-      price_min: 0,
-      price_max: 0,
-      price_unit: '만원',
-      commission_rate: 10,
-      service_area: ['강남구'],
-      is_active: true
+  const resetPartnerForm = () => {
+    setPartnerForm({
+      name: '', category: '', subcategory: '', contact_name: '', contact_phone: '',
+      contact_email: '', description: '', price_min: 0, price_max: 0, price_unit: '만원',
+      commission_rate: 10, service_area: ['강남구'], is_active: true
     });
   };
 
-  const openEditModal = (partner: Partner) => {
-    setEditingPartner(partner);
-    setFormData(partner);
-    setShowAddModal(true);
+  // PM CRUD
+  const savePM = async () => {
+    if (!pmForm.name || !pmForm.email) {
+      alert('이름과 이메일은 필수입니다.');
+      return;
+    }
+
+    if (editingPM) {
+      await supabase.from('project_managers').update(pmForm).eq('id', editingPM.id);
+    } else {
+      await supabase.from('project_managers').insert([{
+        ...pmForm,
+        completed_projects: 0,
+        rating: 5.0
+      }]);
+    }
+
+    setShowPMModal(false);
+    setEditingPM(null);
+    setPMForm({ name: '', email: '', phone: '', specialty: [], is_active: true });
+    loadPMs();
   };
 
+  const deletePM = async (id: string) => {
+    if (!confirm('정말 삭제하시겠습니까?')) return;
+    await supabase.from('project_managers').delete().eq('id', id);
+    loadPMs();
+  };
+
+  // 필터링
   const filteredPartners = partners.filter(p => {
     if (selectedCategory && p.category !== selectedCategory) return false;
     if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
   });
+
+  const filteredCustomers = customers.filter(c => {
+    if (!searchQuery) return true;
+    return c.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           c.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           c.phone?.includes(searchQuery);
+  });
+
+  // 탭 메뉴
+  const tabs = [
+    { id: 'dashboard', label: '대시보드', icon: BarChart3 },
+    { id: 'payments', label: '결제관리', icon: CreditCard },
+    { id: 'customers', label: '고객관리', icon: Users },
+    { id: 'pm', label: 'PM관리', icon: UserCheck },
+    { id: 'partners', label: '파트너관리', icon: Building2 },
+  ] as const;
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -209,7 +291,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
             <img src="/favicon-new.png" alt="오프닝" className="w-10 h-10 rounded-xl" />
             <div>
               <h1 className="text-xl font-bold">오프닝 관리자</h1>
-              <p className="text-sm text-slate-400">협력업체 관리 시스템</p>
+              <p className="text-sm text-slate-400">통합 관리 시스템</p>
             </div>
           </div>
           <button
@@ -226,35 +308,40 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
         {/* 사이드바 */}
         <aside className="w-64 bg-white border-r min-h-[calc(100vh-72px)] p-4">
           <nav className="space-y-1">
-            <button className="w-full flex items-center gap-3 px-4 py-3 bg-brand-50 text-brand-700 rounded-lg font-bold">
-              <Building2 size={20} />
-              협력업체 관리
-            </button>
-            <button className="w-full flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg">
-              <Users size={20} />
-              프로젝트 현황
-            </button>
-            <button className="w-full flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg">
-              <TrendingUp size={20} />
-              수수료 정산
-            </button>
-            <button className="w-full flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg">
-              <Settings size={20} />
-              설정
-            </button>
+            {tabs.map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-brand-50 text-brand-700'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon size={20} />
+                  {tab.label}
+                </button>
+              );
+            })}
           </nav>
 
-          {/* 통계 */}
+          {/* 빠른 통계 */}
           <div className="mt-8 p-4 bg-slate-50 rounded-xl">
             <h3 className="font-bold text-sm text-slate-700 mb-3">현황</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500">협력업체</span>
-                <span className="font-bold">{partners.length}개</span>
+                <span className="text-gray-500">고객</span>
+                <span className="font-bold">{stats.totalCustomers}명</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">활성</span>
-                <span className="font-bold text-green-600">{partners.filter(p => p.is_active).length}개</span>
+                <span className="text-gray-500">프로젝트</span>
+                <span className="font-bold">{stats.totalProjects}개</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">파트너</span>
+                <span className="font-bold text-green-600">{stats.activePartners}개</span>
               </div>
             </div>
           </div>
@@ -262,339 +349,635 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
 
         {/* 메인 콘텐츠 */}
         <main className="flex-1 p-6">
-          {/* 상단 액션 */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="업체명 검색..."
-                  className="pl-10 pr-4 py-2 border rounded-lg w-64"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <select
-                className="px-4 py-2 border rounded-lg"
-                value={selectedCategory || ''}
-                onChange={(e) => setSelectedCategory(e.target.value || null)}
-              >
-                <option value="">전체 카테고리</option>
-                {PARTNER_CATEGORIES.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.label}</option>
-                ))}
-              </select>
-            </div>
-            <Button onClick={() => { resetForm(); setEditingPartner(null); setShowAddModal(true); }}>
-              <Plus size={18} className="mr-2" />
-              협력업체 추가
-            </Button>
-          </div>
-
-          {/* 카테고리 탭 */}
-          <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-            <button
-              onClick={() => setSelectedCategory(null)}
-              className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition-colors ${
-                !selectedCategory ? 'bg-slate-900 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              전체 ({partners.length})
-            </button>
-            {PARTNER_CATEGORIES.map(cat => {
-              const Icon = cat.icon;
-              const count = partners.filter(p => p.category === cat.id).length;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap flex items-center gap-2 transition-colors ${
-                    selectedCategory === cat.id ? 'bg-slate-900 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <Icon size={16} />
-                  {cat.label} ({count})
-                </button>
-              );
-            })}
-          </div>
-
-          {/* 협력업체 목록 */}
           {loading ? (
-            <div className="text-center py-20 text-gray-500">로딩 중...</div>
-          ) : filteredPartners.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-xl border">
-              <Building2 size={48} className="mx-auto mb-4 text-gray-300" />
-              <h3 className="font-bold text-gray-700 mb-2">등록된 협력업체가 없습니다</h3>
-              <p className="text-gray-500 text-sm mb-4">협력업체를 추가하여 시작하세요</p>
-              <Button onClick={() => setShowAddModal(true)}>
-                <Plus size={18} className="mr-2" />
-                협력업체 추가
-              </Button>
+            <div className="flex items-center justify-center h-64">
+              <RefreshCw className="animate-spin text-gray-400" size={32} />
             </div>
           ) : (
-            <div className="bg-white rounded-xl border overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">업체명</th>
-                    <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">카테고리</th>
-                    <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">담당자</th>
-                    <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">가격</th>
-                    <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">수수료</th>
-                    <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">상태</th>
-                    <th className="text-right px-4 py-3 text-sm font-bold text-gray-700">관리</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {filteredPartners.map(partner => (
-                    <tr key={partner.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4">
-                        <div>
-                          <p className="font-bold text-slate-900">{partner.name}</p>
-                          <p className="text-xs text-gray-500">{partner.description}</p>
+            <>
+              {/* 대시보드 */}
+              {activeTab === 'dashboard' && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-bold">대시보드</h2>
+
+                  {/* 통계 카드 */}
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="bg-white p-6 rounded-xl border">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                          <Users className="text-blue-600" size={24} />
                         </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium">
-                          {PARTNER_CATEGORIES.find(c => c.id === partner.category)?.label || partner.category}
-                        </span>
-                        {partner.subcategory && (
-                          <span className="ml-1 px-2 py-1 bg-brand-50 text-brand-700 rounded text-xs font-medium">
-                            {partner.subcategory}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4">
-                        <p className="text-sm">{partner.contact_name}</p>
-                        <p className="text-xs text-gray-500">{partner.contact_phone}</p>
-                      </td>
-                      <td className="px-4 py-4">
-                        <p className="text-sm font-medium">
-                          {partner.price_min.toLocaleString()} ~ {partner.price_max.toLocaleString()}{partner.price_unit}
+                        <div>
+                          <p className="text-sm text-gray-500">총 고객</p>
+                          <p className="text-2xl font-bold">{stats.totalCustomers}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-white p-6 rounded-xl border">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                          <Package className="text-green-600" size={24} />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">진행 프로젝트</p>
+                          <p className="text-2xl font-bold">{stats.totalProjects}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-white p-6 rounded-xl border">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                          <Building2 className="text-purple-600" size={24} />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">협력 파트너</p>
+                          <p className="text-2xl font-bold">{stats.activePartners}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-white p-6 rounded-xl border">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+                          <CreditCard className="text-yellow-600" size={24} />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">이번 달 매출</p>
+                          <p className="text-2xl font-bold">{stats.monthlyRevenue.toLocaleString()}원</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 최근 가입 고객 */}
+                  <div className="bg-white rounded-xl border">
+                    <div className="px-6 py-4 border-b flex items-center justify-between">
+                      <h3 className="font-bold">최근 가입 고객</h3>
+                      <button onClick={() => setActiveTab('customers')} className="text-sm text-brand-600 hover:underline">
+                        전체보기
+                      </button>
+                    </div>
+                    <div className="divide-y">
+                      {customers.slice(0, 5).map(customer => (
+                        <div key={customer.id} className="px-6 py-4 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                              <Users size={18} className="text-gray-400" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{customer.full_name || '이름 없음'}</p>
+                              <p className="text-sm text-gray-500">{customer.email}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-gray-500">
+                              {customer.signup_source || '직접 가입'}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {new Date(customer.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 결제관리 */}
+              {activeTab === 'payments' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold">결제관리</h2>
+                    <div className="flex gap-2">
+                      <Button variant="outline" onClick={() => loadPayments()}>
+                        <RefreshCw size={18} className="mr-2" />
+                        새로고침
+                      </Button>
+                      <Button variant="outline">
+                        <Download size={18} className="mr-2" />
+                        내보내기
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Toss 키 표시 */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <h3 className="font-bold text-blue-800 mb-2">Toss 결제 연동 (테스트 모드)</h3>
+                    <div className="text-sm text-blue-700 space-y-1">
+                      <p>Client Key: {TOSS_CLIENT_KEY.slice(0, 20)}...</p>
+                      <p>Secret Key: {TOSS_SECRET_KEY.slice(0, 20)}...</p>
+                    </div>
+                  </div>
+
+                  {/* 결제 통계 */}
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="bg-white p-4 rounded-xl border">
+                      <p className="text-sm text-gray-500">총 결제액</p>
+                      <p className="text-xl font-bold text-green-600">
+                        {payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0).toLocaleString()}원
+                      </p>
+                    </div>
+                    <div className="bg-white p-4 rounded-xl border">
+                      <p className="text-sm text-gray-500">대기중</p>
+                      <p className="text-xl font-bold text-yellow-600">
+                        {payments.filter(p => p.status === 'pending').length}건
+                      </p>
+                    </div>
+                    <div className="bg-white p-4 rounded-xl border">
+                      <p className="text-sm text-gray-500">완료</p>
+                      <p className="text-xl font-bold text-green-600">
+                        {payments.filter(p => p.status === 'completed').length}건
+                      </p>
+                    </div>
+                    <div className="bg-white p-4 rounded-xl border">
+                      <p className="text-sm text-gray-500">환불</p>
+                      <p className="text-xl font-bold text-red-600">
+                        {payments.filter(p => p.status === 'refunded').length}건
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 결제 내역 */}
+                  <div className="bg-white rounded-xl border overflow-hidden">
+                    {payments.length === 0 ? (
+                      <div className="text-center py-20 text-gray-500">
+                        <CreditCard size={48} className="mx-auto mb-4 text-gray-300" />
+                        <p>결제 내역이 없습니다</p>
+                      </div>
+                    ) : (
+                      <table className="w-full">
+                        <thead className="bg-gray-50 border-b">
+                          <tr>
+                            <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">결제번호</th>
+                            <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">고객</th>
+                            <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">금액</th>
+                            <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">상태</th>
+                            <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">결제일</th>
+                            <th className="text-right px-4 py-3 text-sm font-bold text-gray-700">관리</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {payments.map(payment => (
+                            <tr key={payment.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-4 font-mono text-sm">{payment.id.slice(0, 8)}</td>
+                              <td className="px-4 py-4">{payment.customer_name}</td>
+                              <td className="px-4 py-4 font-bold">{payment.amount.toLocaleString()}원</td>
+                              <td className="px-4 py-4">
+                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                                  payment.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                  payment.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                  payment.status === 'refunded' ? 'bg-red-100 text-red-700' :
+                                  'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {payment.status === 'completed' ? '완료' :
+                                   payment.status === 'pending' ? '대기' :
+                                   payment.status === 'refunded' ? '환불' : '실패'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-4 text-sm text-gray-500">
+                                {new Date(payment.created_at).toLocaleDateString()}
+                              </td>
+                              <td className="px-4 py-4 text-right">
+                                <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
+                                  <Eye size={16} />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 고객관리 */}
+              {activeTab === 'customers' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold">고객관리</h2>
+                    <div className="flex gap-4">
+                      <div className="relative">
+                        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="이름, 이메일, 전화번호 검색..."
+                          className="pl-10 pr-4 py-2 border rounded-lg w-64"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                      </div>
+                      <Button variant="outline">
+                        <Download size={18} className="mr-2" />
+                        내보내기
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* 가입경로 통계 */}
+                  <div className="grid grid-cols-6 gap-4">
+                    {['search', 'instagram', 'youtube', 'blog', 'friend', 'other'].map(source => (
+                      <div key={source} className="bg-white p-4 rounded-xl border text-center">
+                        <p className="text-xs text-gray-500 mb-1">
+                          {source === 'search' ? '검색' :
+                           source === 'instagram' ? '인스타그램' :
+                           source === 'youtube' ? '유튜브' :
+                           source === 'blog' ? '블로그' :
+                           source === 'friend' ? '지인추천' : '기타'}
                         </p>
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className="font-bold text-brand-600">{partner.commission_rate}%</span>
-                      </td>
-                      <td className="px-4 py-4">
+                        <p className="text-xl font-bold">
+                          {customers.filter(c => c.signup_source === source).length}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* 고객 목록 */}
+                  <div className="bg-white rounded-xl border overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b">
+                        <tr>
+                          <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">고객</th>
+                          <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">연락처</th>
+                          <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">가입경로</th>
+                          <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">가입일</th>
+                          <th className="text-right px-4 py-3 text-sm font-bold text-gray-700">관리</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {filteredCustomers.map(customer => (
+                          <tr key={customer.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                                  <Users size={18} className="text-gray-400" />
+                                </div>
+                                <div>
+                                  <p className="font-bold">{customer.full_name || '이름 없음'}</p>
+                                  <p className="text-sm text-gray-500">{customer.email}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 text-sm">{customer.phone || '-'}</td>
+                            <td className="px-4 py-4">
+                              <span className="px-2 py-1 bg-gray-100 rounded text-xs font-medium">
+                                {customer.signup_source === 'search' ? '검색' :
+                                 customer.signup_source === 'instagram' ? '인스타그램' :
+                                 customer.signup_source === 'youtube' ? '유튜브' :
+                                 customer.signup_source === 'blog' ? '블로그' :
+                                 customer.signup_source === 'friend' ? '지인추천' :
+                                 customer.signup_source || '직접 가입'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 text-sm text-gray-500">
+                              {new Date(customer.created_at).toLocaleDateString()}
+                            </td>
+                            <td className="px-4 py-4 text-right">
+                              <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
+                                <Eye size={16} />
+                              </button>
+                              <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
+                                <MessageSquare size={16} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* PM관리 */}
+              {activeTab === 'pm' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold">PM관리</h2>
+                    <Button onClick={() => { setPMForm({ name: '', email: '', phone: '', specialty: [], is_active: true }); setEditingPM(null); setShowPMModal(true); }}>
+                      <Plus size={18} className="mr-2" />
+                      PM 추가
+                    </Button>
+                  </div>
+
+                  {/* PM 목록 */}
+                  <div className="grid grid-cols-3 gap-4">
+                    {pms.map(pm => (
+                      <div key={pm.id} className="bg-white rounded-xl border p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            {pm.profile_image ? (
+                              <img src={pm.profile_image} alt={pm.name} className="w-14 h-14 rounded-full object-cover" />
+                            ) : (
+                              <div className="w-14 h-14 bg-brand-100 rounded-full flex items-center justify-center">
+                                <UserCheck size={24} className="text-brand-600" />
+                              </div>
+                            )}
+                            <div>
+                              <h3 className="font-bold text-lg">{pm.name}</h3>
+                              <p className="text-sm text-gray-500">{pm.email}</p>
+                            </div>
+                          </div>
+                          <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                            pm.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                          }`}>
+                            {pm.is_active ? '활성' : '비활성'}
+                          </span>
+                        </div>
+
+                        <div className="space-y-2 text-sm mb-4">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">연락처</span>
+                            <span>{pm.phone || '-'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">진행중 프로젝트</span>
+                            <span className="font-bold text-brand-600">{pm.active_projects || 0}개</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">총 프로젝트</span>
+                            <span>{pm.total_projects || 0}개</span>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            fullWidth
+                            onClick={() => { setEditingPM(pm); setPMForm(pm); setShowPMModal(true); }}
+                          >
+                            <Edit2 size={14} className="mr-1" />
+                            수정
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deletePM(pm.id)}
+                            className="text-red-500 hover:bg-red-50"
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {pms.length === 0 && (
+                      <div className="col-span-3 text-center py-20 bg-white rounded-xl border">
+                        <UserCheck size={48} className="mx-auto mb-4 text-gray-300" />
+                        <h3 className="font-bold text-gray-700 mb-2">등록된 PM이 없습니다</h3>
+                        <p className="text-gray-500 text-sm mb-4">PM을 추가하여 시작하세요</p>
+                        <Button onClick={() => setShowPMModal(true)}>
+                          <Plus size={18} className="mr-2" />
+                          PM 추가
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 파트너관리 */}
+              {activeTab === 'partners' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <h2 className="text-2xl font-bold">파트너관리</h2>
+                      <div className="relative">
+                        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="업체명 검색..."
+                          className="pl-10 pr-4 py-2 border rounded-lg w-64"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <Button onClick={() => { resetPartnerForm(); setEditingPartner(null); setShowAddModal(true); }}>
+                      <Plus size={18} className="mr-2" />
+                      협력업체 추가
+                    </Button>
+                  </div>
+
+                  {/* 카테고리 탭 */}
+                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    <button
+                      onClick={() => setSelectedCategory(null)}
+                      className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition-colors ${
+                        !selectedCategory ? 'bg-slate-900 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      전체 ({partners.length})
+                    </button>
+                    {PARTNER_CATEGORIES.map(cat => {
+                      const Icon = cat.icon;
+                      const count = partners.filter(p => p.category === cat.id).length;
+                      return (
                         <button
-                          onClick={() => togglePartnerActive(partner)}
-                          className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            partner.is_active
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-gray-100 text-gray-500'
+                          key={cat.id}
+                          onClick={() => setSelectedCategory(cat.id)}
+                          className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap flex items-center gap-2 transition-colors ${
+                            selectedCategory === cat.id ? 'bg-slate-900 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
                           }`}
                         >
-                          {partner.is_active ? '활성' : '비활성'}
+                          <Icon size={16} />
+                          {cat.label} ({count})
                         </button>
-                      </td>
-                      <td className="px-4 py-4 text-right">
-                        <button
-                          onClick={() => openEditModal(partner)}
-                          className="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button
-                          onClick={() => deletePartner(partner.id)}
-                          className="p-2 hover:bg-red-50 rounded-lg text-red-500"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* 파트너 목록 */}
+                  {filteredPartners.length === 0 ? (
+                    <div className="text-center py-20 bg-white rounded-xl border">
+                      <Building2 size={48} className="mx-auto mb-4 text-gray-300" />
+                      <h3 className="font-bold text-gray-700 mb-2">등록된 협력업체가 없습니다</h3>
+                      <Button onClick={() => setShowAddModal(true)}>
+                        <Plus size={18} className="mr-2" />
+                        협력업체 추가
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-xl border overflow-hidden">
+                      <table className="w-full">
+                        <thead className="bg-gray-50 border-b">
+                          <tr>
+                            <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">업체명</th>
+                            <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">카테고리</th>
+                            <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">담당자</th>
+                            <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">가격</th>
+                            <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">수수료</th>
+                            <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">상태</th>
+                            <th className="text-right px-4 py-3 text-sm font-bold text-gray-700">관리</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {filteredPartners.map(partner => (
+                            <tr key={partner.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-4">
+                                <p className="font-bold">{partner.name}</p>
+                                <p className="text-xs text-gray-500 truncate max-w-xs">{partner.description}</p>
+                              </td>
+                              <td className="px-4 py-4">
+                                <span className="px-2 py-1 bg-gray-100 rounded text-xs font-medium">
+                                  {PARTNER_CATEGORIES.find(c => c.id === partner.category)?.label}
+                                </span>
+                              </td>
+                              <td className="px-4 py-4 text-sm">
+                                <p>{partner.contact_name}</p>
+                                <p className="text-gray-500">{partner.contact_phone}</p>
+                              </td>
+                              <td className="px-4 py-4 text-sm">
+                                {partner.price_min}~{partner.price_max}{partner.price_unit}
+                              </td>
+                              <td className="px-4 py-4">
+                                <span className="font-bold text-brand-600">{partner.commission_rate}%</span>
+                              </td>
+                              <td className="px-4 py-4">
+                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                                  partner.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                                }`}>
+                                  {partner.is_active ? '활성' : '비활성'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-4 text-right">
+                                <button
+                                  onClick={() => { setEditingPartner(partner); setPartnerForm(partner); setShowAddModal(true); }}
+                                  className="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+                                >
+                                  <Edit2 size={16} />
+                                </button>
+                                <button
+                                  onClick={() => deletePartner(partner.id)}
+                                  className="p-2 hover:bg-red-50 rounded-lg text-red-500"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </main>
       </div>
 
-      {/* 추가/수정 모달 */}
+      {/* 파트너 추가/수정 모달 */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
             <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold">
-                {editingPartner ? '협력업체 수정' : '협력업체 추가'}
-              </h2>
+              <h2 className="text-xl font-bold">{editingPartner ? '협력업체 수정' : '협력업체 추가'}</h2>
               <button onClick={() => { setShowAddModal(false); setEditingPartner(null); }} className="p-2 hover:bg-gray-100 rounded-full">
                 <X size={20} />
               </button>
             </div>
-
             <div className="p-6 space-y-4">
-              {/* 기본 정보 */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">업체명 *</label>
-                <input
-                  type="text"
-                  className="w-full px-4 py-2 border rounded-lg"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
+                <input type="text" className="w-full px-4 py-2 border rounded-lg" value={partnerForm.name} onChange={(e) => setPartnerForm({ ...partnerForm, name: e.target.value })} />
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">카테고리 *</label>
-                  <select
-                    className="w-full px-4 py-2 border rounded-lg"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value, subcategory: '' })}
-                  >
+                  <select className="w-full px-4 py-2 border rounded-lg" value={partnerForm.category} onChange={(e) => setPartnerForm({ ...partnerForm, category: e.target.value, subcategory: '' })}>
                     <option value="">선택</option>
-                    {PARTNER_CATEGORIES.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.label}</option>
-                    ))}
+                    {PARTNER_CATEGORIES.map(cat => <option key={cat.id} value={cat.id}>{cat.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">세부 카테고리</label>
-                  <select
-                    className="w-full px-4 py-2 border rounded-lg"
-                    value={formData.subcategory}
-                    onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
-                    disabled={!formData.category}
-                  >
+                  <select className="w-full px-4 py-2 border rounded-lg" value={partnerForm.subcategory} onChange={(e) => setPartnerForm({ ...partnerForm, subcategory: e.target.value })} disabled={!partnerForm.category}>
                     <option value="">선택</option>
-                    {PARTNER_CATEGORIES.find(c => c.id === formData.category)?.subcategories.map(sub => (
-                      <option key={sub} value={sub}>{sub}</option>
-                    ))}
+                    {PARTNER_CATEGORIES.find(c => c.id === partnerForm.category)?.subcategories.map(sub => <option key={sub} value={sub}>{sub}</option>)}
                   </select>
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">설명</label>
-                <textarea
-                  className="w-full px-4 py-2 border rounded-lg resize-none h-20"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="업체 소개 및 특징..."
-                />
+                <textarea className="w-full px-4 py-2 border rounded-lg resize-none h-20" value={partnerForm.description} onChange={(e) => setPartnerForm({ ...partnerForm, description: e.target.value })} />
               </div>
-
-              {/* 담당자 정보 */}
-              <div className="border-t pt-4">
-                <h3 className="font-bold text-gray-700 mb-3">담당자 정보</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">담당자명</label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-2 border rounded-lg"
-                      value={formData.contact_name}
-                      onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">연락처</label>
-                    <input
-                      type="tel"
-                      className="w-full px-4 py-2 border rounded-lg"
-                      value={formData.contact_phone}
-                      onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">이메일</label>
-                    <input
-                      type="email"
-                      className="w-full px-4 py-2 border rounded-lg"
-                      value={formData.contact_email}
-                      onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
-                    />
-                  </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">담당자명</label>
+                  <input type="text" className="w-full px-4 py-2 border rounded-lg" value={partnerForm.contact_name} onChange={(e) => setPartnerForm({ ...partnerForm, contact_name: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">연락처</label>
+                  <input type="tel" className="w-full px-4 py-2 border rounded-lg" value={partnerForm.contact_phone} onChange={(e) => setPartnerForm({ ...partnerForm, contact_phone: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">이메일</label>
+                  <input type="email" className="w-full px-4 py-2 border rounded-lg" value={partnerForm.contact_email} onChange={(e) => setPartnerForm({ ...partnerForm, contact_email: e.target.value })} />
                 </div>
               </div>
-
-              {/* 가격 정보 */}
-              <div className="border-t pt-4">
-                <h3 className="font-bold text-gray-700 mb-3">가격 및 수수료</h3>
-                <div className="grid grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">최소 가격</label>
-                    <input
-                      type="number"
-                      className="w-full px-4 py-2 border rounded-lg"
-                      value={formData.price_min}
-                      onChange={(e) => setFormData({ ...formData, price_min: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">최대 가격</label>
-                    <input
-                      type="number"
-                      className="w-full px-4 py-2 border rounded-lg"
-                      value={formData.price_max}
-                      onChange={(e) => setFormData({ ...formData, price_max: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">단위</label>
-                    <select
-                      className="w-full px-4 py-2 border rounded-lg"
-                      value={formData.price_unit}
-                      onChange={(e) => setFormData({ ...formData, price_unit: e.target.value })}
-                    >
-                      <option value="만원">만원</option>
-                      <option value="평당 만원">평당 만원</option>
-                      <option value="월 만원">월 만원</option>
-                      <option value="연 만원">연 만원</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">수수료율 (%)</label>
-                    <input
-                      type="number"
-                      className="w-full px-4 py-2 border rounded-lg"
-                      value={formData.commission_rate}
-                      onChange={(e) => setFormData({ ...formData, commission_rate: Number(e.target.value) })}
-                    />
-                  </div>
+              <div className="grid grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">최소 가격</label>
+                  <input type="number" className="w-full px-4 py-2 border rounded-lg" value={partnerForm.price_min} onChange={(e) => setPartnerForm({ ...partnerForm, price_min: Number(e.target.value) })} />
                 </div>
-              </div>
-
-              {/* 서비스 지역 */}
-              <div className="border-t pt-4">
-                <h3 className="font-bold text-gray-700 mb-3">서비스 지역</h3>
-                <div className="flex flex-wrap gap-2">
-                  {['강남구', '서초구', '송파구', '강동구', '마포구', '용산구', '성동구', '광진구'].map(area => (
-                    <button
-                      key={area}
-                      onClick={() => {
-                        const areas = formData.service_area || [];
-                        if (areas.includes(area)) {
-                          setFormData({ ...formData, service_area: areas.filter(a => a !== area) });
-                        } else {
-                          setFormData({ ...formData, service_area: [...areas, area] });
-                        }
-                      }}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                        formData.service_area?.includes(area)
-                          ? 'bg-brand-600 text-white border-brand-600'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-brand-300'
-                      }`}
-                    >
-                      {area}
-                    </button>
-                  ))}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">최대 가격</label>
+                  <input type="number" className="w-full px-4 py-2 border rounded-lg" value={partnerForm.price_max} onChange={(e) => setPartnerForm({ ...partnerForm, price_max: Number(e.target.value) })} />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">단위</label>
+                  <select className="w-full px-4 py-2 border rounded-lg" value={partnerForm.price_unit} onChange={(e) => setPartnerForm({ ...partnerForm, price_unit: e.target.value })}>
+                    <option value="만원">만원</option>
+                    <option value="평당 만원">평당 만원</option>
+                    <option value="월 만원">월 만원</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">수수료율 (%)</label>
+                  <input type="number" className="w-full px-4 py-2 border rounded-lg" value={partnerForm.commission_rate} onChange={(e) => setPartnerForm({ ...partnerForm, commission_rate: Number(e.target.value) })} />
                 </div>
               </div>
             </div>
-
             <div className="sticky bottom-0 bg-white border-t px-6 py-4 flex justify-end gap-3">
-              <Button variant="outline" onClick={() => { setShowAddModal(false); setEditingPartner(null); }}>
-                취소
-              </Button>
-              <Button onClick={savePartner}>
-                <Save size={18} className="mr-2" />
-                {editingPartner ? '수정' : '추가'}
-              </Button>
+              <Button variant="outline" onClick={() => { setShowAddModal(false); setEditingPartner(null); }}>취소</Button>
+              <Button onClick={savePartner}><Save size={18} className="mr-2" />{editingPartner ? '수정' : '추가'}</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PM 추가/수정 모달 */}
+      {showPMModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl w-full max-w-md m-4">
+            <div className="border-b px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold">{editingPM ? 'PM 수정' : 'PM 추가'}</h2>
+              <button onClick={() => { setShowPMModal(false); setEditingPM(null); }} className="p-2 hover:bg-gray-100 rounded-full">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">이름 *</label>
+                <input type="text" className="w-full px-4 py-2 border rounded-lg" value={pmForm.name} onChange={(e) => setPMForm({ ...pmForm, name: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">이메일 *</label>
+                <input type="email" className="w-full px-4 py-2 border rounded-lg" value={pmForm.email} onChange={(e) => setPMForm({ ...pmForm, email: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">연락처</label>
+                <input type="tel" className="w-full px-4 py-2 border rounded-lg" value={pmForm.phone} onChange={(e) => setPMForm({ ...pmForm, phone: e.target.value })} />
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="pm-active" checked={pmForm.is_active} onChange={(e) => setPMForm({ ...pmForm, is_active: e.target.checked })} />
+                <label htmlFor="pm-active" className="text-sm font-medium">활성화</label>
+              </div>
+            </div>
+            <div className="border-t px-6 py-4 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => { setShowPMModal(false); setEditingPM(null); }}>취소</Button>
+              <Button onClick={savePM}><Save size={18} className="mr-2" />{editingPM ? '수정' : '추가'}</Button>
             </div>
           </div>
         </div>

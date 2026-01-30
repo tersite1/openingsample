@@ -4,7 +4,8 @@ import { Button } from './Components';
 import {
   User, Phone, Mail, Camera, Save, LogOut, Briefcase, MessageCircle,
   ChevronRight, Check, Clock, Loader2, Send, ArrowRight, X,
-  Star, Award, MapPin, Calendar, CheckCircle, AlertTriangle
+  Star, Award, MapPin, Calendar, CheckCircle, AlertTriangle,
+  ClipboardList, Building2, ChevronDown, ExternalLink, AlertCircle
 } from 'lucide-react';
 
 interface PMPortalViewProps {
@@ -16,7 +17,9 @@ interface ChecklistItemData {
   id: string;
   title: string;
   category: string;
+  description?: string;
   status: 'done' | 'worry' | 'unchecked';
+  estimatedCost?: { min: number; max: number; unit: string };
 }
 
 interface Project {
@@ -32,6 +35,8 @@ interface Project {
   created_at: string;
   user_id: string;
   checklist_data: ChecklistItemData[];
+  user_name?: string;
+  user_phone?: string;
 }
 
 interface Partner {
@@ -39,10 +44,14 @@ interface Partner {
   name: string;
   category: string;
   subcategory: string;
+  contact_name: string;
   contact_phone: string;
+  contact_email: string;
+  description: string;
   price_min: number;
   price_max: number;
   price_unit: string;
+  commission_rate: number;
 }
 
 interface PartnerAssignment {
@@ -51,8 +60,9 @@ interface PartnerAssignment {
   checklist_item_id: string;
   partner_id: string;
   partner?: Partner;
-  status: string;
+  status: 'pending' | 'contacted' | 'confirmed' | 'completed';
   pm_notes: string;
+  created_at: string;
 }
 
 interface Message {
@@ -88,6 +98,13 @@ const STEP_LABELS: Record<number, string> = {
   9: '완료/사후관리'
 };
 
+const CHECKLIST_CATEGORIES = [
+  { id: 'license', label: '인허가/행정', color: 'blue' },
+  { id: 'construction', label: '시설/공사', color: 'orange' },
+  { id: 'equipment', label: '주방 장비', color: 'purple' },
+  { id: 'operation', label: '운영 준비', color: 'green' },
+];
+
 export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) => {
   const [profile, setProfile] = useState<PMProfile | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -102,6 +119,7 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
   const [assignments, setAssignments] = useState<PartnerAssignment[]>([]);
   const [showPartnerModal, setShowPartnerModal] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'chat' | 'checklist'>('checklist');
+  const [selectedChecklistCategory, setSelectedChecklistCategory] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -112,7 +130,8 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
     if (selectedProject) {
       loadMessages(selectedProject.id);
       loadAssignments(selectedProject.id);
-      subscribeToMessages(selectedProject.id);
+      const unsubscribe = subscribeToMessages(selectedProject.id);
+      return unsubscribe;
     }
   }, [selectedProject]);
 
@@ -127,7 +146,7 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
   const loadPMData = async () => {
     setLoading(true);
 
-    // PM 프로필 로드
+    // PM 프로필 로드 (project_managers 테이블 사용)
     const { data: pmData } = await supabase
       .from('project_managers')
       .select('*')
@@ -222,14 +241,26 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
       await supabase.from('project_messages').insert({
         project_id: selectedProject.id,
         sender_type: 'PM',
-        message: `${item.title} 서비스에 "${partner.name}" 업체를 배정했습니다.\n예상 비용: ${partner.price_min}~${partner.price_max}${partner.price_unit}\n연락처: ${partner.contact_phone}`
+        message: `📋 "${item.title}" 항목에 업체를 배정했습니다.\n\n🏢 업체명: ${partner.name}\n💰 예상 비용: ${partner.price_min}~${partner.price_max}${partner.price_unit}\n📞 연락처: ${partner.contact_phone}\n\n업체에서 곧 연락드릴 예정입니다.`
       });
+      loadMessages(selectedProject.id);
+    }
+  };
+
+  const updateAssignmentStatus = async (assignmentId: string, status: PartnerAssignment['status']) => {
+    await supabase
+      .from('project_partner_assignments')
+      .update({ status })
+      .eq('id', assignmentId);
+
+    if (selectedProject) {
+      loadAssignments(selectedProject.id);
     }
   };
 
   const getPartnerForItem = (itemId: string) => {
     const assignment = assignments.find(a => a.checklist_item_id === itemId);
-    return assignment?.partner;
+    return assignment;
   };
 
   const subscribeToMessages = (projectId: string) => {
@@ -280,7 +311,6 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
       .eq('id', selectedProject.id);
 
     if (!error) {
-      // 시스템 메시지 전송
       await supabase.from('project_messages').insert({
         project_id: selectedProject.id,
         sender_type: 'SYSTEM',
@@ -307,7 +337,7 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
       .eq('id', profile.id);
 
     if (!error) {
-      setProfile({ ...profile, ...profileForm });
+      setProfile({ ...profile, ...profileForm } as PMProfile);
       setEditingProfile(false);
     }
   };
@@ -336,6 +366,24 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
     }
   };
 
+  // 체크리스트 아이템 필터링
+  const getFilteredChecklist = () => {
+    if (!selectedProject?.checklist_data) return [];
+
+    let items = selectedProject.checklist_data;
+
+    if (selectedChecklistCategory) {
+      items = items.filter(item => item.category === selectedChecklistCategory);
+    }
+
+    return items;
+  };
+
+  // 걱정/도움 필요 항목 수
+  const getWorryCount = () => {
+    return selectedProject?.checklist_data?.filter(i => i.status === 'worry').length || 0;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -357,7 +405,7 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
                 alt={profile?.name}
                 className="w-14 h-14 rounded-full object-cover border-2 border-brand-100"
               />
-              <label className="absolute bottom-0 right-0 w-6 h-6 bg-brand-600 rounded-full flex items-center justify-center cursor-pointer">
+              <label className="absolute bottom-0 right-0 w-6 h-6 bg-brand-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-brand-700 transition-colors">
                 <Camera size={12} className="text-white" />
                 <input
                   type="file"
@@ -368,12 +416,12 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
               </label>
             </div>
             <div className="flex-1">
-              <h2 className="font-bold text-lg">{profile?.name} PM</h2>
+              <h2 className="font-bold text-lg">{profile?.name || 'PM'}</h2>
               <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Star size={14} className="text-yellow-500" />
-                <span>{profile?.rating}</span>
+                <Star size={14} className="text-yellow-500 fill-yellow-500" />
+                <span>{profile?.rating || 5.0}</span>
                 <span>·</span>
-                <span>{profile?.completed_projects}건 완료</span>
+                <span>{profile?.completed_projects || 0}건 완료</span>
               </div>
             </div>
           </div>
@@ -412,13 +460,6 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
           ) : (
             <div className="space-y-2">
               <p className="text-sm text-gray-600">{profile?.introduction || '자기소개를 입력하세요'}</p>
-              <div className="flex flex-wrap gap-1">
-                {profile?.specialties?.map((s, i) => (
-                  <span key={i} className="px-2 py-0.5 bg-brand-50 text-brand-700 text-xs rounded-full">
-                    {s}
-                  </span>
-                ))}
-              </div>
               <button
                 onClick={() => setEditingProfile(true)}
                 className="text-xs text-brand-600 font-bold hover:underline"
@@ -440,30 +481,39 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
             </div>
           ) : (
             <div className="divide-y">
-              {projects.map(project => (
-                <button
-                  key={project.id}
-                  onClick={() => setSelectedProject(project)}
-                  className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
-                    selectedProject?.id === project.id ? 'bg-brand-50 border-l-4 border-brand-600' : ''
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-sm">{project.business_category}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      project.current_step >= 8 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                      {STEP_LABELS[project.current_step]}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    강남구 {project.location_dong} · {project.store_size}평
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {new Date(project.created_at).toLocaleDateString()}
-                  </p>
-                </button>
-              ))}
+              {projects.map(project => {
+                const worryItems = project.checklist_data?.filter(i => i.status === 'worry').length || 0;
+                return (
+                  <button
+                    key={project.id}
+                    onClick={() => setSelectedProject(project)}
+                    className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
+                      selectedProject?.id === project.id ? 'bg-brand-50 border-l-4 border-brand-600' : ''
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-sm">{project.business_category}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        project.current_step >= 8 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {STEP_LABELS[project.current_step]}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      강남구 {project.location_dong} · {project.store_size}평
+                    </p>
+                    {worryItems > 0 && (
+                      <div className="mt-2 flex items-center gap-1 text-xs text-orange-600">
+                        <AlertCircle size={12} />
+                        <span>도움 필요 {worryItems}건</span>
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-400 mt-1">
+                      {new Date(project.created_at).toLocaleDateString()}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -480,7 +530,7 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
         </div>
       </aside>
 
-      {/* 메인 - 프로젝트 상세 & 채팅 */}
+      {/* 메인 - 프로젝트 상세 */}
       <main className="flex-1 flex flex-col">
         {selectedProject ? (
           <>
@@ -497,6 +547,11 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
+                  {getWorryCount() > 0 && (
+                    <span className="px-3 py-1 rounded-full text-sm font-bold bg-orange-100 text-orange-700">
+                      도움 필요 {getWorryCount()}건
+                    </span>
+                  )}
                   <span className={`px-3 py-1 rounded-full text-sm font-bold ${
                     selectedProject.current_step >= 8
                       ? 'bg-green-100 text-green-700'
@@ -513,69 +568,236 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
                 </div>
               </div>
 
-              {/* 진행 상태 바 */}
-              <div className="mt-4 flex gap-1">
-                {[7, 8, 9].map(step => (
-                  <div
-                    key={step}
-                    className={`flex-1 h-2 rounded-full ${
-                      step <= selectedProject.current_step ? 'bg-brand-600' : 'bg-gray-200'
-                    }`}
-                  />
-                ))}
+              {/* 탭 */}
+              <div className="mt-4 flex gap-2">
+                <button
+                  onClick={() => setActiveTab('checklist')}
+                  className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors ${
+                    activeTab === 'checklist'
+                      ? 'bg-brand-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  <ClipboardList size={16} />
+                  체크리스트
+                  {getWorryCount() > 0 && (
+                    <span className={`px-1.5 py-0.5 rounded-full text-xs ${
+                      activeTab === 'checklist' ? 'bg-white/20' : 'bg-orange-100 text-orange-700'
+                    }`}>
+                      {getWorryCount()}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab('chat')}
+                  className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors ${
+                    activeTab === 'chat'
+                      ? 'bg-brand-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  <MessageCircle size={16} />
+                  채팅
+                </button>
               </div>
             </div>
 
-            {/* 채팅 영역 */}
-            <div className="flex-1 overflow-y-auto p-6 bg-gray-50 space-y-3">
-              {messages.map(msg => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.sender_type === 'PM' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[70%] rounded-2xl px-4 py-3 ${
-                      msg.sender_type === 'PM'
-                        ? 'bg-brand-600 text-white rounded-br-md'
-                        : msg.sender_type === 'USER'
-                          ? 'bg-white border shadow-sm rounded-bl-md'
-                          : 'bg-gray-200 text-gray-600 text-sm'
+            {/* 체크리스트 탭 */}
+            {activeTab === 'checklist' && (
+              <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+                {/* 카테고리 필터 */}
+                <div className="flex gap-2 mb-4">
+                  <button
+                    onClick={() => setSelectedChecklistCategory(null)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      !selectedChecklistCategory
+                        ? 'bg-slate-900 text-white'
+                        : 'bg-white text-gray-600 hover:bg-gray-50'
                     }`}
                   >
-                    {msg.sender_type === 'USER' && (
-                      <p className="text-xs text-gray-400 font-bold mb-1">고객</p>
-                    )}
-                    <p className="whitespace-pre-wrap text-sm">{msg.message}</p>
-                    <p className={`text-[10px] mt-1 ${
-                      msg.sender_type === 'PM' ? 'text-white/70' : 'text-gray-400'
-                    }`}>
-                      {new Date(msg.created_at).toLocaleTimeString('ko-KR', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
+                    전체
+                  </button>
+                  <button
+                    onClick={() => setSelectedChecklistCategory('worry')}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors ${
+                      selectedChecklistCategory === 'worry'
+                        ? 'bg-orange-600 text-white'
+                        : 'bg-white text-orange-600 border border-orange-200 hover:bg-orange-50'
+                    }`}
+                  >
+                    <AlertCircle size={14} />
+                    도움 필요
+                  </button>
+                  {CHECKLIST_CATEGORIES.map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setSelectedChecklistCategory(cat.id)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                        selectedChecklistCategory === cat.id
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-white text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* 체크리스트 아이템 */}
+                <div className="space-y-3">
+                  {(selectedChecklistCategory === 'worry'
+                    ? selectedProject.checklist_data?.filter(i => i.status === 'worry')
+                    : getFilteredChecklist()
+                  )?.map(item => {
+                    const assignment = getPartnerForItem(item.id);
+                    return (
+                      <div
+                        key={item.id}
+                        className={`bg-white rounded-xl border p-4 ${
+                          item.status === 'worry' ? 'border-orange-300 bg-orange-50/50' : ''
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              {item.status === 'done' && (
+                                <CheckCircle size={18} className="text-green-600" />
+                              )}
+                              {item.status === 'worry' && (
+                                <AlertCircle size={18} className="text-orange-600" />
+                              )}
+                              {item.status === 'unchecked' && (
+                                <div className="w-4.5 h-4.5 border-2 border-gray-300 rounded" />
+                              )}
+                              <h3 className="font-bold">{item.title}</h3>
+                              <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                                {CHECKLIST_CATEGORIES.find(c => c.id === item.category)?.label || item.category}
+                              </span>
+                            </div>
+                            {item.description && (
+                              <p className="text-sm text-gray-500 ml-6 mb-2">{item.description}</p>
+                            )}
+                            {item.estimatedCost && (
+                              <p className="text-sm text-gray-600 ml-6">
+                                예상 비용: {item.estimatedCost.min}~{item.estimatedCost.max}{item.estimatedCost.unit}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* 파트너 배정 */}
+                          <div className="flex items-center gap-2">
+                            {assignment?.partner ? (
+                              <div className="text-right">
+                                <div className="flex items-center gap-2">
+                                  <div className="text-sm">
+                                    <p className="font-bold text-brand-700">{assignment.partner.name}</p>
+                                    <p className="text-xs text-gray-500">{assignment.partner.contact_phone}</p>
+                                  </div>
+                                  <select
+                                    value={assignment.status}
+                                    onChange={(e) => updateAssignmentStatus(assignment.id, e.target.value as any)}
+                                    className="px-2 py-1 border rounded text-xs"
+                                  >
+                                    <option value="pending">대기중</option>
+                                    <option value="contacted">연락완료</option>
+                                    <option value="confirmed">확정</option>
+                                    <option value="completed">완료</option>
+                                  </select>
+                                </div>
+                                <button
+                                  onClick={() => setShowPartnerModal(item.id)}
+                                  className="text-xs text-brand-600 hover:underline mt-1"
+                                >
+                                  업체 변경
+                                </button>
+                              </div>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={() => setShowPartnerModal(item.id)}
+                              >
+                                <Building2 size={14} className="mr-1" />
+                                업체 배정
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {getFilteredChecklist().length === 0 && (
+                    <div className="text-center py-12 text-gray-400">
+                      <ClipboardList size={48} className="mx-auto mb-4 opacity-50" />
+                      <p>체크리스트 항목이 없습니다</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 채팅 탭 */}
+            {activeTab === 'chat' && (
+              <>
+                <div className="flex-1 overflow-y-auto p-6 bg-gray-50 space-y-3">
+                  {messages.length === 0 ? (
+                    <div className="text-center py-12 text-gray-400">
+                      <MessageCircle size={48} className="mx-auto mb-4 opacity-50" />
+                      <p>메시지가 없습니다</p>
+                      <p className="text-sm">고객에게 먼저 인사를 건네보세요</p>
+                    </div>
+                  ) : (
+                    messages.map(msg => (
+                      <div
+                        key={msg.id}
+                        className={`flex ${msg.sender_type === 'PM' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[70%] rounded-2xl px-4 py-3 ${
+                            msg.sender_type === 'PM'
+                              ? 'bg-brand-600 text-white rounded-br-md'
+                              : msg.sender_type === 'USER'
+                                ? 'bg-white border shadow-sm rounded-bl-md'
+                                : 'bg-gray-200 text-gray-600 text-sm'
+                          }`}
+                        >
+                          {msg.sender_type === 'USER' && (
+                            <p className="text-xs text-gray-400 font-bold mb-1">고객</p>
+                          )}
+                          <p className="whitespace-pre-wrap text-sm">{msg.message}</p>
+                          <p className={`text-[10px] mt-1 ${
+                            msg.sender_type === 'PM' ? 'text-white/70' : 'text-gray-400'
+                          }`}>
+                            {new Date(msg.created_at).toLocaleTimeString('ko-KR', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* 메시지 입력 */}
+                <div className="bg-white border-t p-4">
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      placeholder="메시지를 입력하세요..."
+                      className="flex-1 px-4 py-3 bg-gray-100 rounded-xl"
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                    />
+                    <Button onClick={sendMessage} disabled={sending || !newMessage.trim()}>
+                      {sending ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
+                    </Button>
                   </div>
                 </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* 메시지 입력 */}
-            <div className="bg-white border-t p-4">
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  placeholder="메시지를 입력하세요..."
-                  className="flex-1 px-4 py-3 bg-gray-100 rounded-xl"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                />
-                <Button onClick={sendMessage} disabled={sending || !newMessage.trim()}>
-                  {sending ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
-                </Button>
-              </div>
-            </div>
+              </>
+            )}
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-400">
@@ -586,6 +808,56 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
           </div>
         )}
       </main>
+
+      {/* 파트너 배정 모달 */}
+      {showPartnerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden m-4">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
+              <h2 className="text-xl font-bold">협력 업체 배정</h2>
+              <button
+                onClick={() => setShowPartnerModal(null)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {partners.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  <Building2 size={48} className="mx-auto mb-4 opacity-50" />
+                  <p>등록된 협력 업체가 없습니다</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {partners.map(partner => (
+                    <div
+                      key={partner.id}
+                      className="border rounded-xl p-4 hover:border-brand-300 hover:bg-brand-50/50 cursor-pointer transition-colors"
+                      onClick={() => assignPartner(showPartnerModal, partner.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-bold">{partner.name}</h3>
+                          <p className="text-sm text-gray-500">{partner.description}</p>
+                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                            <span>{partner.subcategory || partner.category}</span>
+                            <span>·</span>
+                            <span>{partner.price_min}~{partner.price_max}{partner.price_unit}</span>
+                            <span>·</span>
+                            <span>{partner.contact_phone}</span>
+                          </div>
+                        </div>
+                        <ChevronRight className="text-gray-400" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

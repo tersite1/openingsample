@@ -146,9 +146,9 @@ function App() {
       setCurrentTab('HOME');
   };
 
-  // 관리자 로그인 핸들러 (ID: admin, PW: dailymeal1!)
+  // 관리자 로그인 핸들러 (ID: admin, PW: epdlfflalf1!)
   const handleAdminLogin = (email: string, password: string): boolean => {
-    if (email === 'admin' && password === 'dailymeal1!') {
+    if (email === 'admin' && password === 'epdlfflalf1!') {
       setIsAdmin(true);
       setIsAuthenticated(true);
       setUser({
