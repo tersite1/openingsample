@@ -8,7 +8,8 @@ import {
   Hammer, PaintBucket, SignpostBig, Wifi, Shield, Bike,
   Truck, Store, Sparkles, Wind, CreditCard, BarChart3,
   UserCheck, Calendar, Eye, Download, RefreshCw, Clock,
-  CheckCircle, XCircle, AlertCircle, Image, MessageSquare
+  CheckCircle, XCircle, AlertCircle, Image, MessageSquare,
+  Briefcase, Send, ArrowLeft
 } from 'lucide-react';
 
 // Toss 결제 키 (테스트)
@@ -78,7 +79,29 @@ interface AdminViewProps {
   onLogout: () => void;
 }
 
-type AdminTab = 'dashboard' | 'payments' | 'customers' | 'pm' | 'partners';
+type AdminTab = 'dashboard' | 'payments' | 'customers' | 'pm' | 'partners' | 'projects';
+
+interface ProjectWithPM {
+  id: string;
+  business_category: string;
+  location_dong: string;
+  store_size: number;
+  estimated_total: number;
+  status: string;
+  current_step: number;
+  pm_id: string;
+  pm_name?: string;
+  created_at: string;
+  user_id: string;
+}
+
+interface ProjectMessage {
+  id: string;
+  project_id: string;
+  sender_type: 'USER' | 'PM' | 'SYSTEM';
+  message: string;
+  created_at: string;
+}
 
 // 협력업체 카테고리
 const PARTNER_CATEGORIES = [
@@ -108,6 +131,10 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [pms, setPMs] = useState<PM[]>([]);
+  const [allProjects, setAllProjects] = useState<ProjectWithPM[]>([]);
+  const [projectMessages, setProjectMessages] = useState<ProjectMessage[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [projectFilterPM, setProjectFilterPM] = useState<string | null>(null);
 
   // 필터/검색
   const [searchQuery, setSearchQuery] = useState('');
@@ -144,9 +171,38 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
       loadPartners(),
       loadCustomers(),
       loadPayments(),
-      loadPMs()
+      loadPMs(),
+      loadAllProjects()
     ]);
     setLoading(false);
+  };
+
+  const loadAllProjects = async () => {
+    const { data: projects } = await supabase
+      .from('startup_projects')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (projects) {
+      // PM 이름 매핑
+      const projectsWithPM = projects.map(p => {
+        const pm = pms.find(pm => pm.id === p.pm_id);
+        return { ...p, pm_name: pm?.name || '미배정' };
+      });
+      setAllProjects(projectsWithPM);
+    }
+  };
+
+  const loadProjectMessages = async (projectId: string) => {
+    const { data } = await supabase
+      .from('project_messages')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('created_at');
+
+    if (data) {
+      setProjectMessages(data);
+    }
   };
 
   const loadStats = async () => {
@@ -293,6 +349,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
   // 탭 메뉴
   const tabs = [
     { id: 'dashboard', label: '대시보드', icon: BarChart3 },
+    { id: 'projects', label: '프로젝트', icon: Briefcase },
     { id: 'payments', label: '결제관리', icon: CreditCard },
     { id: 'customers', label: '고객관리', icon: Users },
     { id: 'pm', label: 'PM관리', icon: UserCheck },
@@ -893,6 +950,132 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                       </table>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* 프로젝트 열람 */}
+              {activeTab === 'projects' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold">프로젝트 열람</h2>
+                    <div className="flex gap-4">
+                      <select
+                        className="px-4 py-2 border rounded-lg"
+                        value={projectFilterPM || ''}
+                        onChange={(e) => setProjectFilterPM(e.target.value || null)}
+                      >
+                        <option value="">전체 PM</option>
+                        {pms.map(pm => (
+                          <option key={pm.id} value={pm.id}>{pm.name}</option>
+                        ))}
+                      </select>
+                      <Button variant="outline" onClick={loadAllProjects}>
+                        <RefreshCw size={18} className="mr-2" />
+                        새로고침
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-6">
+                    {/* 프로젝트 목록 */}
+                    <div className="w-1/3 bg-white rounded-xl border overflow-hidden">
+                      <div className="px-4 py-3 bg-gray-50 border-b font-bold text-sm">
+                        프로젝트 목록 ({(projectFilterPM ? allProjects.filter(p => p.pm_id === projectFilterPM) : allProjects).length})
+                      </div>
+                      <div className="divide-y max-h-[600px] overflow-y-auto">
+                        {(projectFilterPM ? allProjects.filter(p => p.pm_id === projectFilterPM) : allProjects).map(project => {
+                          const pm = pms.find(p => p.id === project.pm_id);
+                          return (
+                            <button
+                              key={project.id}
+                              onClick={() => { setSelectedProjectId(project.id); loadProjectMessages(project.id); }}
+                              className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
+                                selectedProjectId === project.id ? 'bg-brand-50 border-l-4 border-brand-600' : ''
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-bold text-sm">{project.business_category}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                  project.current_step >= 8 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  Step {project.current_step}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-500">
+                                강남구 {project.location_dong} · {project.store_size}평
+                              </p>
+                              <p className="text-xs text-brand-600 font-medium mt-1">
+                                담당: {pm?.name || '미배정'}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {new Date(project.created_at).toLocaleDateString()}
+                              </p>
+                            </button>
+                          );
+                        })}
+                        {allProjects.length === 0 && (
+                          <div className="p-8 text-center text-gray-400">
+                            <Briefcase size={32} className="mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">프로젝트가 없습니다</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 채팅 내용 */}
+                    <div className="flex-1 bg-white rounded-xl border overflow-hidden flex flex-col">
+                      <div className="px-4 py-3 bg-gray-50 border-b font-bold text-sm flex items-center gap-2">
+                        <MessageSquare size={16} />
+                        채팅 내용
+                      </div>
+                      {selectedProjectId ? (
+                        <div className="flex-1 p-4 space-y-3 overflow-y-auto max-h-[550px] bg-gray-50">
+                          {projectMessages.length === 0 ? (
+                            <div className="text-center py-12 text-gray-400">
+                              <MessageSquare size={32} className="mx-auto mb-2 opacity-50" />
+                              <p className="text-sm">메시지가 없습니다</p>
+                            </div>
+                          ) : (
+                            projectMessages.map(msg => (
+                              <div
+                                key={msg.id}
+                                className={`flex ${msg.sender_type === 'PM' ? 'justify-end' : 'justify-start'}`}
+                              >
+                                <div
+                                  className={`max-w-[80%] rounded-xl px-4 py-2 ${
+                                    msg.sender_type === 'PM'
+                                      ? 'bg-brand-600 text-white'
+                                      : msg.sender_type === 'USER'
+                                        ? 'bg-white border shadow-sm'
+                                        : 'bg-gray-200 text-gray-600'
+                                  }`}
+                                >
+                                  <p className={`text-xs font-bold mb-1 ${
+                                    msg.sender_type === 'PM' ? 'text-white/70' : 'text-gray-400'
+                                  }`}>
+                                    {msg.sender_type === 'PM' ? 'PM' : msg.sender_type === 'USER' ? '고객' : '시스템'}
+                                  </p>
+                                  <p className="whitespace-pre-wrap text-sm">{msg.message}</p>
+                                  <p className={`text-[10px] mt-1 ${
+                                    msg.sender_type === 'PM' ? 'text-white/50' : 'text-gray-300'
+                                  }`}>
+                                    {new Date(msg.created_at).toLocaleString('ko-KR')}
+                                  </p>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex-1 flex items-center justify-center text-gray-400">
+                          <div className="text-center">
+                            <Briefcase size={48} className="mx-auto mb-4 opacity-50" />
+                            <p>프로젝트를 선택하면 채팅 내용을 볼 수 있습니다</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </>
