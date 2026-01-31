@@ -500,7 +500,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
         </aside>
 
         {/* 메인 콘텐츠 */}
-        <main className="flex-1 p-3 md:p-6 overflow-y-auto pb-20 md:pb-6">
+        <main className="flex-1 p-3 md:p-6 overflow-y-auto pb-28 md:pb-6">
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <RefreshCw className="animate-spin text-gray-400" size={32} />
@@ -1519,7 +1519,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
       )}
 
       {/* 모바일 하단 탭 네비게이션 */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t z-50 safe-area-pb">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t z-50 pb-[env(safe-area-inset-bottom)]">
         <div className="flex justify-around py-2">
           {tabs.map(tab => {
             const Icon = tab.icon;

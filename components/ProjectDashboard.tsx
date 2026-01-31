@@ -202,10 +202,10 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ projectId, o
   const progress = getProgress();
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 pb-28">
       {/* 헤더 */}
       <div className="bg-brand-600 text-white">
-        <div className="px-4 pt-6 pb-20">
+        <div className="px-4 pt-6 pb-28">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-xl font-bold">

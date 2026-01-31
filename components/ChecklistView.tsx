@@ -327,7 +327,7 @@ export const ChecklistView: React.FC = () => {
 
   // 체크리스트 목록
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-28">
       <div className="sticky top-0 z-30 bg-white border-b px-4 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">창업 체크리스트</h1>

@@ -291,15 +291,15 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
 
             {/* Bottom Actions */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 flex gap-3 z-50">
-                <Button 
-                    variant="outline" 
-                    className="flex-1 border-gray-300" 
+            <div className="fixed bottom-0 left-0 right-0 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white border-t border-gray-100 flex gap-3 z-50">
+                <Button
+                    variant="outline"
+                    className="flex-1 border-gray-300"
                     onClick={() => { setSelectedPackageDetail(null); onConsultingClick(pkg); }}
                 >
                     <MessageCircle size={18} className="mr-2" /> 패키지 없이 상담
                 </Button>
-                <Button 
+                <Button
                     className="flex-[2]"
                     onClick={() => { setSelectedPackageDetail(null); onPackageSelect(pkg); }}
                 >
@@ -311,7 +311,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   };
 
   return (
-    <div className="pb-24 bg-slate-50 min-h-screen">
+    <div className="pb-28 bg-slate-50 min-h-screen">
       {/* 1. Sticky Glass Header */}
       <header className="sticky top-0 z-40 glass border-b border-white/50 transition-all">
         <div className="max-w-7xl mx-auto">
