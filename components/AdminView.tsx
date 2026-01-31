@@ -431,30 +431,30 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
   ] as const;
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-[100dvh] bg-gray-100 flex flex-col">
       {/* 헤더 */}
-      <header className="bg-slate-900 text-white px-6 py-4">
+      <header className="bg-slate-900 text-white px-4 md:px-6 py-3 md:py-4 shrink-0">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <img src="/favicon-new.png" alt="오프닝" className="w-10 h-10 rounded-xl" />
+          <div className="flex items-center gap-2 md:gap-4">
+            <img src="/favicon-new.png" alt="오프닝" className="w-8 h-8 md:w-10 md:h-10 rounded-xl" />
             <div>
-              <h1 className="text-xl font-bold">오프닝 관리자</h1>
-              <p className="text-sm text-slate-400">통합 관리 시스템</p>
+              <h1 className="text-base md:text-xl font-bold">오프닝 관리자</h1>
+              <p className="text-xs md:text-sm text-slate-400 hidden md:block">통합 관리 시스템</p>
             </div>
           </div>
           <button
             onClick={onLogout}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors text-sm"
           >
-            <LogOut size={18} />
-            로그아웃
+            <LogOut size={16} />
+            <span className="hidden md:inline">로그아웃</span>
           </button>
         </div>
       </header>
 
-      <div className="flex">
-        {/* 사이드바 */}
-        <aside className="w-64 bg-white border-r min-h-[calc(100vh-72px)] p-4">
+      <div className="flex flex-1 min-h-0">
+        {/* 사이드바 - 데스크톱만 */}
+        <aside className="hidden md:block w-64 bg-white border-r p-4 overflow-y-auto">
           <nav className="space-y-1">
             {tabs.map(tab => {
               const Icon = tab.icon;
@@ -500,7 +500,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
         </aside>
 
         {/* 메인 콘텐츠 */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-3 md:p-6 overflow-y-auto pb-20 md:pb-6">
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <RefreshCw className="animate-spin text-gray-400" size={32} />
@@ -509,11 +509,11 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
             <>
               {/* 대시보드 */}
               {activeTab === 'dashboard' && (
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-bold">대시보드</h2>
+                <div className="space-y-4 md:space-y-6">
+                  <h2 className="text-xl md:text-2xl font-bold">대시보드</h2>
 
                   {/* 통계 카드 */}
-                  <div className="grid grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                     <div className="bg-white p-6 rounded-xl border">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -622,7 +622,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                   </div>
 
                   {/* 결제 통계 */}
-                  <div className="grid grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                     <div className="bg-white p-4 rounded-xl border">
                       <p className="text-sm text-gray-500">총 결제액</p>
                       <p className="text-xl font-bold text-green-600">
@@ -727,7 +727,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                   </div>
 
                   {/* 가입경로 통계 */}
-                  <div className="grid grid-cols-6 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-3 md:gap-4">
                     {['search', 'instagram', 'youtube', 'blog', 'friend', 'other'].map(source => (
                       <div key={source} className="bg-white p-4 rounded-xl border text-center">
                         <p className="text-xs text-gray-500 mb-1">
@@ -812,7 +812,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                   </div>
 
                   {/* PM 목록 */}
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
                     {pms.map(pm => (
                       <div key={pm.id} className="bg-white rounded-xl border p-6">
                         <div className="flex items-start justify-between mb-4">
@@ -1270,7 +1270,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                 <label className="block text-sm font-bold text-gray-700 mb-1">설명</label>
                 <textarea className="w-full px-4 py-2 border rounded-lg resize-none h-20" value={partnerForm.description} onChange={(e) => setPartnerForm({ ...partnerForm, description: e.target.value })} />
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">담당자명</label>
                   <input type="text" className="w-full px-4 py-2 border rounded-lg" value={partnerForm.contact_name} onChange={(e) => setPartnerForm({ ...partnerForm, contact_name: e.target.value })} />
@@ -1284,7 +1284,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                   <input type="email" className="w-full px-4 py-2 border rounded-lg" value={partnerForm.contact_email} onChange={(e) => setPartnerForm({ ...partnerForm, contact_email: e.target.value })} />
                 </div>
               </div>
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">최소 가격</label>
                   <input type="number" className="w-full px-4 py-2 border rounded-lg" value={partnerForm.price_min} onChange={(e) => setPartnerForm({ ...partnerForm, price_min: Number(e.target.value) })} />
@@ -1517,6 +1517,29 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
           </div>
         </div>
       )}
+
+      {/* 모바일 하단 탭 네비게이션 */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t z-50 safe-area-pb">
+        <div className="flex justify-around py-2">
+          {tabs.map(tab => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg min-w-[60px] ${
+                  activeTab === tab.id
+                    ? 'text-brand-600'
+                    : 'text-gray-400'
+                }`}
+              >
+                <Icon size={20} />
+                <span className="text-[10px] font-medium">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 };
