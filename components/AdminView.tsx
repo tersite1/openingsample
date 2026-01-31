@@ -1060,7 +1060,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                       <div className="px-4 py-3 bg-gray-50 border-b font-bold text-sm">
                         프로젝트 목록 ({(projectFilterPM ? allProjects.filter(p => p.pm_id === projectFilterPM) : allProjects).length})
                       </div>
-                      <div className="divide-y max-h-[600px] overflow-y-auto">
+                      <div className="divide-y max-h-[calc(100vh-300px)] overflow-y-auto">
                         {(projectFilterPM ? allProjects.filter(p => p.pm_id === projectFilterPM) : allProjects).map(project => {
                           const pm = pms.find(p => p.id === project.pm_id);
                           return (
@@ -1138,7 +1138,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                       </div>
                       {selectedProjectId ? (
                         <>
-                          <div className="flex-1 p-4 space-y-3 overflow-y-auto max-h-[450px] bg-gray-50">
+                          <div className="flex-1 p-4 space-y-3 overflow-y-auto max-h-[calc(100vh-350px)] bg-gray-50">
                             {projectMessages.length === 0 ? (
                               <div className="text-center py-12 text-gray-400">
                                 <MessageSquare size={32} className="mx-auto mb-2 opacity-50" />

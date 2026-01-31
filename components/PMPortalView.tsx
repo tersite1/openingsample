@@ -1063,7 +1063,7 @@ export const PMPortalView: React.FC<PMPortalViewProps> = ({ pmId, onLogout }) =>
             {/* 채팅 탭 */}
             {activeTab === 'chat' && (
               <>
-                <div className="flex-1 overflow-y-auto p-6 bg-gray-50 space-y-3">
+                <div className="flex-1 overflow-y-auto p-6 bg-gray-50 space-y-3 max-h-[calc(100vh-280px)]">
                   {messages.length === 0 ? (
                     <div className="text-center py-12 text-gray-400">
                       <MessageCircle size={48} className="mx-auto mb-4 opacity-50" />
